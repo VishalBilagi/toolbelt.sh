@@ -221,6 +221,12 @@ import Input from '../../components/ui/Input.astro';
     gap: 0.2rem;
   }
 
+  :global(.palette-grid .swatch-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
   :global(.palette-grid .placeholder) {
     color: var(--text-tertiary);
   }
@@ -312,7 +318,11 @@ import Input from '../../components/ui/Input.astro';
               <p>${rgb}</p>
               <p>${hsl}</p>
             </div>
-            <button class="ui-button ui-button--ghost ui-button--sm" data-copy="${hex}">Copy HEX</button>
+            <div class="swatch-actions">
+              <button class="ui-button ui-button--ghost ui-button--sm" data-copy-value="${hex}">Copy HEX</button>
+              <button class="ui-button ui-button--ghost ui-button--sm" data-copy-value="${rgb}">Copy RGB</button>
+              <button class="ui-button ui-button--ghost ui-button--sm" data-copy-value="${hsl}">Copy HSL</button>
+            </div>
           </article>
         `;
       })
@@ -387,9 +397,9 @@ import Input from '../../components/ui/Input.astro';
   paletteOutput?.addEventListener('click', async (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const button = target.closest<HTMLButtonElement>('button[data-copy]');
+    const button = target.closest<HTMLButtonElement>('button[data-copy-value]');
     if (!button) return;
-    const value = button.dataset.copy;
+    const value = button.dataset.copyValue;
     if (!value) return;
     await navigator.clipboard.writeText(value);
   });
