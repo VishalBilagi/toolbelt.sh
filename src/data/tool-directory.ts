@@ -39,6 +39,13 @@ export const toolSections: ToolSection[] = [
         description: 'Scale and fix SVG dimensions without quality loss.',
         tags: ['svg', 'vector', 'resize'],
         icon: 'svg'
+      },
+      {
+        name: 'Image Editor Basics',
+        href: '/tools/image-editor',
+        description: 'Crop, rotate, flip, resize, and convert common image formats.',
+        tags: ['image', 'crop', 'rotate', 'flip', 'resize', 'convert', 'avif', 'webp'],
+        icon: 'crop'
       }
     ]
   },

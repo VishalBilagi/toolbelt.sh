@@ -1,0 +1,432 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+---
+
+<ToolLayout title="Image Editor Basics">
+  <section class="tool-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Edit & Export</h2>
+          <p class="ui-card__description">Crop, rotate, flip, resize, and convert image formats directly in your browser.</p>
+        </div>
+        <Badge tone="neutral">Client-side</Badge>
+      </div>
+
+      <Field label="Image file" htmlFor="image-file" hint="PNG, JPG, WEBP, AVIF, and GIF are supported as input when the browser can decode them.">
+        <Input id="image-file" type="file" accept="image/*" />
+      </Field>
+
+      <div class="section-block">
+        <div class="section-heading">
+          <h3>Crop</h3>
+          <p>Set crop rectangle in source-image pixels.</p>
+        </div>
+        <div class="field-grid two-col">
+          <Field label="X" htmlFor="crop-x"><Input id="crop-x" type="number" min="0" step="1" value="0" /></Field>
+          <Field label="Y" htmlFor="crop-y"><Input id="crop-y" type="number" min="0" step="1" value="0" /></Field>
+          <Field label="Width" htmlFor="crop-width"><Input id="crop-width" type="number" min="1" step="1" value="1" /></Field>
+          <Field label="Height" htmlFor="crop-height"><Input id="crop-height" type="number" min="1" step="1" value="1" /></Field>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-heading">
+          <h3>Transform</h3>
+        </div>
+        <div class="transform-row">
+          <Button id="rotate-left" variant="ghost" size="sm">Rotate -90°</Button>
+          <Button id="rotate-right" variant="ghost" size="sm">Rotate +90°</Button>
+          <Button id="flip-h" variant="ghost" size="sm">Flip Horizontal</Button>
+          <Button id="flip-v" variant="ghost" size="sm">Flip Vertical</Button>
+          <Button id="reset-all" variant="secondary" size="sm">Reset</Button>
+        </div>
+        <p id="transform-summary" class="meta-text">Rotation: 0° · Flip H: off · Flip V: off</p>
+      </div>
+
+      <div class="section-block">
+        <div class="section-heading">
+          <h3>Resize & Format</h3>
+        </div>
+
+        <label class="inline-checkbox">
+          <input id="aspect-lock" type="checkbox" checked />
+          <span>Lock aspect ratio</span>
+        </label>
+
+        <div class="field-grid two-col">
+          <Field label="Output width (px)" htmlFor="output-width"><Input id="output-width" type="number" min="1" max="8192" step="1" value="1" /></Field>
+          <Field label="Output height (px)" htmlFor="output-height"><Input id="output-height" type="number" min="1" max="8192" step="1" value="1" /></Field>
+        </div>
+
+        <div class="field-grid two-col">
+          <Field label="Output format" htmlFor="format-select">
+            <Select id="format-select">
+              <option value="png">PNG</option>
+              <option value="jpeg">JPG</option>
+              <option value="webp">WebP</option>
+              <option value="avif">AVIF</option>
+            </Select>
+          </Field>
+          <Field label="Quality (JPG/WebP/AVIF)" htmlFor="quality-range">
+            <div class="slider-row">
+              <input id="quality-range" type="range" min="0.3" max="1" step="0.01" value="0.92" />
+              <p id="quality-label" class="slider-value">0.92</p>
+            </div>
+          </Field>
+        </div>
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <div class="actions">
+        <Button id="download-btn" variant="primary">Download Export</Button>
+        <Button href="/tools" variant="ghost" size="sm">Back to tools</Button>
+      </div>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Live Preview</h2>
+          <p class="ui-card__description">Preview updates while you edit, before exporting.</p>
+        </div>
+      </div>
+
+      <div class="preview-grid">
+        <section>
+          <h3>Original</h3>
+          <canvas id="before-canvas"></canvas>
+          <p id="before-meta" class="meta-text">-</p>
+        </section>
+        <section>
+          <h3>Edited</h3>
+          <canvas id="after-canvas"></canvas>
+          <p id="after-meta" class="meta-text">-</p>
+        </section>
+      </div>
+    </Card>
+  </section>
+</ToolLayout>
+
+<style>
+  .tool-grid { display:grid; gap:var(--space-xl); grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); }
+  .section-block { margin-top:var(--space-lg); padding-top:var(--space-lg); border-top:1px solid var(--border-default); display:grid; gap:var(--space-md); }
+  .section-heading p,.meta-text { color:var(--text-secondary); font-size:.86rem; }
+  .field-grid { display:grid; gap:var(--space-md); }
+  .field-grid.two-col { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+  .transform-row,.actions { display:flex; flex-wrap:wrap; gap:var(--space-sm); }
+  .preview-grid { display:grid; gap:var(--space-lg); }
+  .preview-grid canvas { width:100%; max-height:340px; object-fit:contain; background:color-mix(in srgb, var(--bg-inset) 82%, transparent); border:1px solid var(--border-default); border-radius:var(--radius-md); }
+  .status { margin-top:var(--space-md); color:var(--text-secondary); min-height:1.4rem; }
+  .slider-row { display:grid; gap:var(--space-md); grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+  .slider-value { min-width:3.2rem; text-align:right; font-family:var(--font-mono); color:var(--text-secondary); font-size:.84rem; }
+  @media (max-width: 1080px) { .tool-grid { grid-template-columns:1fr; } }
+</style>
+
+<script>
+  type ImageFormat = import('../../tools/image-editor/logic').ImageFormat;
+
+  const fileInput = document.getElementById('image-file') as HTMLInputElement | null;
+  const beforeCanvas = document.getElementById('before-canvas') as HTMLCanvasElement | null;
+  const afterCanvas = document.getElementById('after-canvas') as HTMLCanvasElement | null;
+  const cropX = document.getElementById('crop-x') as HTMLInputElement | null;
+  const cropY = document.getElementById('crop-y') as HTMLInputElement | null;
+  const cropWidth = document.getElementById('crop-width') as HTMLInputElement | null;
+  const cropHeight = document.getElementById('crop-height') as HTMLInputElement | null;
+  const outputWidth = document.getElementById('output-width') as HTMLInputElement | null;
+  const outputHeight = document.getElementById('output-height') as HTMLInputElement | null;
+  const aspectLock = document.getElementById('aspect-lock') as HTMLInputElement | null;
+  const qualityRange = document.getElementById('quality-range') as HTMLInputElement | null;
+  const qualityLabel = document.getElementById('quality-label');
+  const formatSelect = document.getElementById('format-select') as HTMLSelectElement | null;
+  const beforeMeta = document.getElementById('before-meta');
+  const afterMeta = document.getElementById('after-meta');
+  const statusText = document.getElementById('status');
+  const transformSummary = document.getElementById('transform-summary');
+
+  const rotateLeft = document.getElementById('rotate-left');
+  const rotateRight = document.getElementById('rotate-right');
+  const flipHBtn = document.getElementById('flip-h');
+  const flipVBtn = document.getElementById('flip-v');
+  const resetAllBtn = document.getElementById('reset-all');
+  const downloadBtn = document.getElementById('download-btn');
+
+  let imageEditorLogic: typeof import('../../tools/image-editor/logic') | null = null;
+  let sourceBitmap: ImageBitmap | null = null;
+  let state = { rotation: 0, flipH: false, flipV: false };
+  let formatSupport: Record<ImageFormat, boolean> = { png: true, jpeg: true, webp: false, avif: false };
+
+  const getLogic = async () => {
+    if (!imageEditorLogic) imageEditorLogic = await import('../../tools/image-editor/logic');
+    return imageEditorLogic;
+  };
+
+  const updateTransformSummary = () => {
+    if (!transformSummary) return;
+    transformSummary.textContent = `Rotation: ${state.rotation}° · Flip H: ${state.flipH ? 'on' : 'off'} · Flip V: ${state.flipV ? 'on' : 'off'}`;
+  };
+
+  const parseIntSafe = (input: HTMLInputElement | null, fallback: number) => {
+    const next = Number.parseInt(input?.value ?? '', 10);
+    return Number.isFinite(next) ? next : fallback;
+  };
+
+  const setStatus = (value: string) => {
+    if (statusText) statusText.textContent = value;
+  };
+
+  const detectFormatSupport = async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+
+    const probe = (mime: string) => {
+      try {
+        return canvas.toDataURL(mime).startsWith(`data:${mime}`);
+      } catch {
+        return false;
+      }
+    };
+
+    formatSupport = { png: true, jpeg: true, webp: probe('image/webp'), avif: probe('image/avif') };
+
+    if (formatSelect) {
+      Array.from(formatSelect.options).forEach((option) => {
+        const key = option.value as ImageFormat;
+        if (!formatSupport[key]) option.text = `${option.text} (fallback to PNG)`;
+      });
+    }
+  };
+
+  const drawContain = (canvas: HTMLCanvasElement, source: CanvasImageSource, width: number, height: number) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const maxWidth = 640;
+    const maxHeight = 340;
+    const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+    const displayW = Math.max(1, Math.round(width * ratio));
+    const displayH = Math.max(1, Math.round(height * ratio));
+
+    canvas.width = displayW;
+    canvas.height = displayH;
+    ctx.clearRect(0, 0, displayW, displayH);
+    ctx.drawImage(source, 0, 0, displayW, displayH);
+  };
+
+  const renderEditedCanvas = async () => {
+    if (!sourceBitmap || !afterCanvas || !cropX || !cropY || !cropWidth || !cropHeight || !outputWidth || !outputHeight) {
+      return null;
+    }
+
+    const logic = await getLogic();
+    const crop = logic.normalizeCropRect(
+      {
+        x: parseIntSafe(cropX, 0),
+        y: parseIntSafe(cropY, 0),
+        width: parseIntSafe(cropWidth, sourceBitmap.width),
+        height: parseIntSafe(cropHeight, sourceBitmap.height)
+      },
+      sourceBitmap.width,
+      sourceBitmap.height
+    );
+
+    cropX.value = String(crop.x);
+    cropY.value = String(crop.y);
+    cropWidth.value = String(crop.width);
+    cropHeight.value = String(crop.height);
+
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = crop.width;
+    cropCanvas.height = crop.height;
+    const cropCtx = cropCanvas.getContext('2d');
+    if (!cropCtx) return null;
+    cropCtx.drawImage(sourceBitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+
+    const rotateTurns = ((state.rotation / 90) % 4 + 4) % 4;
+    const rotatedWidth = rotateTurns % 2 === 0 ? crop.width : crop.height;
+    const rotatedHeight = rotateTurns % 2 === 0 ? crop.height : crop.width;
+
+    const transformCanvas = document.createElement('canvas');
+    transformCanvas.width = rotatedWidth;
+    transformCanvas.height = rotatedHeight;
+    const transformCtx = transformCanvas.getContext('2d');
+    if (!transformCtx) return null;
+
+    transformCtx.translate(rotatedWidth / 2, rotatedHeight / 2);
+    transformCtx.rotate((state.rotation * Math.PI) / 180);
+    transformCtx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+    transformCtx.drawImage(cropCanvas, -crop.width / 2, -crop.height / 2);
+
+    const transformedAspectRatio = rotatedWidth / rotatedHeight;
+    const safeOutputWidth = logic.clampDimension(parseIntSafe(outputWidth, rotatedWidth), 8192);
+    const safeOutputHeight = logic.clampDimension(parseIntSafe(outputHeight, rotatedHeight), 8192);
+
+    let finalWidth = safeOutputWidth;
+    let finalHeight = safeOutputHeight;
+
+    if (aspectLock?.checked) {
+      finalHeight = logic.deriveLockedHeight(finalWidth, transformedAspectRatio, 8192);
+      outputHeight.value = String(finalHeight);
+    }
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = finalWidth;
+    finalCanvas.height = finalHeight;
+    const finalCtx = finalCanvas.getContext('2d');
+    if (!finalCtx) return null;
+    finalCtx.drawImage(transformCanvas, 0, 0, finalWidth, finalHeight);
+
+    drawContain(afterCanvas, finalCanvas, finalWidth, finalHeight);
+    if (afterMeta) afterMeta.textContent = `Output: ${finalWidth}x${finalHeight}px`;
+
+    return { canvas: finalCanvas, width: finalWidth, height: finalHeight };
+  };
+
+  const resetForImage = () => {
+    if (!sourceBitmap || !cropWidth || !cropHeight || !outputWidth || !outputHeight) return;
+    if (cropX) cropX.value = '0';
+    if (cropY) cropY.value = '0';
+    cropWidth.value = String(sourceBitmap.width);
+    cropHeight.value = String(sourceBitmap.height);
+    outputWidth.value = String(sourceBitmap.width);
+    outputHeight.value = String(sourceBitmap.height);
+    state = { rotation: 0, flipH: false, flipV: false };
+    updateTransformSummary();
+  };
+
+  const rerender = async () => {
+    if (!sourceBitmap) return;
+    await renderEditedCanvas();
+  };
+
+  fileInput?.addEventListener('change', async (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !beforeCanvas) return;
+
+    try {
+      sourceBitmap?.close();
+      sourceBitmap = await createImageBitmap(file);
+      resetForImage();
+      drawContain(beforeCanvas, sourceBitmap, sourceBitmap.width, sourceBitmap.height);
+      if (beforeMeta) beforeMeta.textContent = `Source: ${sourceBitmap.width}x${sourceBitmap.height}px`;
+      setStatus('Image loaded. Edit settings and download when ready.');
+      await rerender();
+    } catch (error) {
+      sourceBitmap = null;
+      setStatus(`Could not read image: ${(error as Error).message}`);
+    }
+  });
+
+  [cropX, cropY, cropWidth, cropHeight, outputWidth, outputHeight, aspectLock, qualityRange, formatSelect].forEach((input) => {
+    input?.addEventListener('input', async (event) => {
+      if (event.target === qualityRange && qualityLabel) {
+        qualityLabel.textContent = Number.parseFloat(qualityRange.value).toFixed(2);
+      }
+
+      if (!sourceBitmap) return;
+      const logic = await getLogic();
+
+      if (aspectLock?.checked && event.target === outputWidth && outputWidth && outputHeight) {
+        const width = Number.parseInt(outputWidth.value, 10);
+        const height = logic.deriveLockedHeight(width, sourceBitmap.width / sourceBitmap.height, 8192);
+        outputHeight.value = String(height);
+      }
+
+      if (aspectLock?.checked && event.target === outputHeight && outputHeight && outputWidth) {
+        const height = Number.parseInt(outputHeight.value, 10);
+        const width = logic.deriveLockedWidth(height, sourceBitmap.width / sourceBitmap.height, 8192);
+        outputWidth.value = String(width);
+      }
+
+      await rerender();
+    });
+  });
+
+  rotateLeft?.addEventListener('click', async () => {
+    state.rotation -= 90;
+    if (state.rotation <= -360) state.rotation = 0;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  rotateRight?.addEventListener('click', async () => {
+    state.rotation += 90;
+    if (state.rotation >= 360) state.rotation = 0;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  flipHBtn?.addEventListener('click', async () => {
+    state.flipH = !state.flipH;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  flipVBtn?.addEventListener('click', async () => {
+    state.flipV = !state.flipV;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  resetAllBtn?.addEventListener('click', async () => {
+    resetForImage();
+    await rerender();
+  });
+
+  downloadBtn?.addEventListener('click', async () => {
+    if (!sourceBitmap || !formatSelect || !qualityRange) {
+      setStatus('Upload an image first.');
+      return;
+    }
+
+    const rendered = await renderEditedCanvas();
+    if (!rendered) {
+      setStatus('Could not render preview for export.');
+      return;
+    }
+
+    const logic = await getLogic();
+    const requested = formatSelect.value as ImageFormat;
+    const finalFormat = logic.getExportFormatWithFallback(requested, formatSupport);
+    const mime = logic.MIME_BY_FORMAT[finalFormat];
+    const quality = Number.parseFloat(qualityRange.value);
+
+    rendered.canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setStatus('Export failed in this browser. Try PNG output.');
+          return;
+        }
+
+        const ext = finalFormat === 'jpeg' ? 'jpg' : finalFormat;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `edited-image.${ext}`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+
+        if (requested !== finalFormat) {
+          setStatus(`${requested.toUpperCase()} export is unavailable here. Downloaded ${finalFormat.toUpperCase()} instead.`);
+          return;
+        }
+
+        setStatus(`Downloaded ${finalFormat.toUpperCase()} (${rendered.width}x${rendered.height}px).`);
+      },
+      mime,
+      finalFormat === 'png' ? undefined : quality
+    );
+  });
+
+  qualityLabel && qualityRange && (qualityLabel.textContent = Number.parseFloat(qualityRange.value).toFixed(2));
+  updateTransformSummary();
+  detectFormatSupport();
+</script>
