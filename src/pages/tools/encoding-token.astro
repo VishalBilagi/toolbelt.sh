@@ -1,0 +1,425 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Encoding & Token Tools">
+  <section class="tool-grid">
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Base64 Encode / Decode</h2>
+            <p class="ui-card__description">Convert text to Base64 and back with Unicode-safe handling.</p>
+          </div>
+        </div>
+
+        <Field label="Input" htmlFor="b64-input">
+          <Textarea id="b64-input" placeholder="Enter text or Base64 value..." />
+        </Field>
+        <div class="actions">
+          <Button id="b64-encode" variant="primary">Encode</Button>
+          <Button id="b64-decode" variant="secondary">Decode</Button>
+          <Button id="b64-copy" variant="ghost">Copy output</Button>
+        </div>
+        <pre id="b64-output" class="output" aria-live="polite">Base64 result appears here.</pre>
+      </Card>
+
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">URL Encode / Decode</h2>
+            <p class="ui-card__description">Encode query-safe values or decode existing escaped strings.</p>
+          </div>
+        </div>
+
+        <Field label="Input" htmlFor="url-input">
+          <Textarea id="url-input" placeholder="Enter value to encode or decode..." />
+        </Field>
+        <div class="actions">
+          <Button id="url-encode" variant="primary">Encode</Button>
+          <Button id="url-decode" variant="secondary">Decode</Button>
+          <Button id="url-copy" variant="ghost">Copy output</Button>
+        </div>
+        <pre id="url-output" class="output" aria-live="polite">URL result appears here.</pre>
+      </Card>
+    </div>
+
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Querystring Editor</h2>
+            <p class="ui-card__description">Parse URL params, edit key/value rows, and rebuild the final query.</p>
+          </div>
+        </div>
+
+        <Field label="URL or query input" htmlFor="query-source">
+          <Input id="query-source" type="text" placeholder="https://example.dev?a=1&b=2#hash or a=1&b=2" />
+        </Field>
+        <div class="actions">
+          <Button id="query-parse" variant="secondary">Parse input</Button>
+          <Button id="query-add-row" variant="ghost">Add row</Button>
+        </div>
+
+        <div class="query-meta">
+          <Field label="Base path" htmlFor="query-base">
+            <Input id="query-base" type="text" placeholder="https://example.dev/path" />
+          </Field>
+          <Field label="Hash fragment" htmlFor="query-hash">
+            <Input id="query-hash" type="text" placeholder="section" />
+          </Field>
+        </div>
+
+        <div class="table-shell">
+          <table class="ui-table ui-table--dense">
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="query-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <Button id="query-build" variant="primary">Rebuild query</Button>
+          <Button id="query-copy" variant="ghost">Copy output</Button>
+        </div>
+        <pre id="query-output" class="output" aria-live="polite">Rebuilt URL/query appears here.</pre>
+      </Card>
+
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">JWT Decode</h2>
+            <p class="ui-card__description">Decode header and payload only.</p>
+          </div>
+          <Badge tone="warning">No signature verification</Badge>
+        </div>
+
+        <p class="warning">
+          This tool decodes JWT claims locally but does not validate authenticity. Treat decoded payloads as untrusted input.
+        </p>
+
+        <Field label="JWT token" htmlFor="jwt-input">
+          <Textarea id="jwt-input" placeholder="eyJhbGciOi...<header>.<payload>.<signature>" />
+        </Field>
+
+        <div class="actions">
+          <Button id="jwt-decode" variant="primary">Decode JWT</Button>
+          <Button id="jwt-copy" variant="ghost">Copy decoded JSON</Button>
+        </div>
+
+        <div class="jwt-grid">
+          <section>
+            <h3 class="subhead">Header</h3>
+            <pre id="jwt-header" class="output">Decoded header appears here.</pre>
+          </section>
+          <section>
+            <h3 class="subhead">Payload</h3>
+            <pre id="jwt-payload" class="output">Decoded payload appears here.</pre>
+          </section>
+        </div>
+
+        <div id="jwt-times" class="time-list" aria-live="polite"></div>
+      </Card>
+    </div>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 92rem) !important;
+    max-width: min(100%, 92rem) !important;
+  }
+
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .tool-column {
+    display: grid;
+    gap: var(--space-xl);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .output {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    min-height: 3.5rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .table-shell {
+    margin-top: var(--space-md);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+  }
+
+  .query-meta {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .row-input {
+    width: 100%;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    color: var(--text-primary);
+    min-height: 2.1rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .warning {
+    margin-bottom: var(--space-sm);
+    color: var(--state-warning);
+  }
+
+  .jwt-grid {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .subhead {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .time-list {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .time-item {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  }
+
+  .time-item strong {
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 1180px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  interface QueryRow {
+    key: string;
+    value: string;
+  }
+
+  let logic: typeof import('../../tools/encoding-token/logic') | null = null;
+  let queryRows: QueryRow[] = [];
+
+  const getLogic = async () => {
+    if (!logic) logic = await import('../../tools/encoding-token/logic');
+    return logic;
+  };
+
+  const output = (id: string) => document.getElementById(id);
+  const getInput = (id: string) => document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
+
+  const setOutput = (id: string, value: string) => {
+    const node = output(id);
+    if (node) node.textContent = value;
+  };
+
+  const escapeHtml = (value: string): string =>
+    value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+  const copyNodeText = async (id: string) => {
+    const text = output(id)?.textContent?.trim();
+    if (!text || /appears here\.$/i.test(text)) return;
+    await navigator.clipboard.writeText(text);
+  };
+
+  const renderQueryRows = () => {
+    const tbody = output('query-rows');
+    if (!tbody) return;
+
+    if (queryRows.length === 0) queryRows = [{ key: '', value: '' }];
+
+    tbody.innerHTML = queryRows
+      .map(
+        (row, index) => `
+          <tr>
+            <td><input data-kind="key" data-index="${index}" class="row-input" value="${escapeHtml(row.key)}" /></td>
+            <td><input data-kind="value" data-index="${index}" class="row-input" value="${escapeHtml(row.value)}" /></td>
+            <td><button type="button" data-remove="${index}" class="ui-button ui-button--ghost ui-button--sm">Remove</button></td>
+          </tr>
+        `
+      )
+      .join('');
+  };
+
+  const parseQueryInput = async () => {
+    const source = getInput('query-source')?.value ?? '';
+    const { parseQueryInput } = await getLogic();
+    const parsed = parseQueryInput(source);
+    queryRows = parsed.entries.length ? parsed.entries : [{ key: '', value: '' }];
+
+    const base = getInput('query-base');
+    const hash = getInput('query-hash');
+    if (base) base.value = parsed.basePath;
+    if (hash) hash.value = parsed.hash;
+
+    renderQueryRows();
+  };
+
+  const rebuildQueryOutput = async () => {
+    const basePath = getInput('query-base')?.value ?? '';
+    const hash = getInput('query-hash')?.value ?? '';
+    const { buildQueryOutput } = await getLogic();
+    setOutput('query-output', buildQueryOutput(basePath, queryRows, hash));
+  };
+
+  document.getElementById('b64-encode')?.addEventListener('click', async () => {
+    const value = getInput('b64-input')?.value ?? '';
+    const { base64Encode } = await getLogic();
+    setOutput('b64-output', base64Encode(value));
+  });
+
+  document.getElementById('b64-decode')?.addEventListener('click', async () => {
+    const value = getInput('b64-input')?.value ?? '';
+    try {
+      const { base64Decode } = await getLogic();
+      setOutput('b64-output', base64Decode(value));
+    } catch (error) {
+      setOutput('b64-output', error instanceof Error ? error.message : 'Invalid Base64 input.');
+    }
+  });
+
+  document.getElementById('url-encode')?.addEventListener('click', async () => {
+    const value = getInput('url-input')?.value ?? '';
+    const { urlEncode } = await getLogic();
+    setOutput('url-output', urlEncode(value));
+  });
+
+  document.getElementById('url-decode')?.addEventListener('click', async () => {
+    const value = getInput('url-input')?.value ?? '';
+    try {
+      const { urlDecode } = await getLogic();
+      setOutput('url-output', urlDecode(value));
+    } catch (error) {
+      setOutput('url-output', error instanceof Error ? error.message : 'Invalid URL encoded input.');
+    }
+  });
+
+  document.getElementById('b64-copy')?.addEventListener('click', () => copyNodeText('b64-output'));
+  document.getElementById('url-copy')?.addEventListener('click', () => copyNodeText('url-output'));
+  document.getElementById('query-copy')?.addEventListener('click', () => copyNodeText('query-output'));
+
+  document.getElementById('query-parse')?.addEventListener('click', parseQueryInput);
+  document.getElementById('query-add-row')?.addEventListener('click', () => {
+    queryRows.push({ key: '', value: '' });
+    renderQueryRows();
+  });
+  document.getElementById('query-build')?.addEventListener('click', rebuildQueryOutput);
+
+  output('query-rows')?.addEventListener('input', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const kind = target.dataset.kind;
+    const index = Number(target.dataset.index);
+    if (!Number.isInteger(index) || !queryRows[index]) return;
+    if (kind === 'key') queryRows[index].key = target.value;
+    if (kind === 'value') queryRows[index].value = target.value;
+  });
+
+  output('query-rows')?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-remove]');
+    if (!button) return;
+    const index = Number(button.dataset.remove);
+    if (!Number.isInteger(index)) return;
+    queryRows.splice(index, 1);
+    renderQueryRows();
+  });
+
+  document.getElementById('jwt-decode')?.addEventListener('click', async () => {
+    const token = getInput('jwt-input')?.value ?? '';
+    try {
+      const { decodeJwt } = await getLogic();
+      const decoded = decodeJwt(token);
+      setOutput('jwt-header', JSON.stringify(decoded.header, null, 2));
+      setOutput('jwt-payload', JSON.stringify(decoded.payload, null, 2));
+
+      const times = output('jwt-times');
+      if (times) {
+        if (decoded.timestamps.length === 0) {
+          times.innerHTML = '<p class="text-secondary">No standard JWT timestamp fields found.</p>';
+        } else {
+          times.innerHTML = decoded.timestamps
+            .map(
+              (time) => `
+                <article class="time-item">
+                  <p><strong>${time.claim}</strong>: ${time.unix}</p>
+                  <p>UTC: ${time.utc}</p>
+                  <p>Local: ${time.local}</p>
+                </article>
+              `
+            )
+            .join('');
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Invalid JWT input.';
+      setOutput('jwt-header', message);
+      setOutput('jwt-payload', 'Decoded payload appears here.');
+      const times = output('jwt-times');
+      if (times) times.innerHTML = '';
+    }
+  });
+
+  document.getElementById('jwt-copy')?.addEventListener('click', async () => {
+    const header = output('jwt-header')?.textContent?.trim() ?? '';
+    const payload = output('jwt-payload')?.textContent?.trim() ?? '';
+    if (/appears here\.$/i.test(header) && /appears here\.$/i.test(payload)) return;
+    await navigator.clipboard.writeText(`Header:\n${header}\n\nPayload:\n${payload}`);
+  });
+
+  renderQueryRows();
+</script>

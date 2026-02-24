@@ -1,0 +1,20 @@
+---
+interface Props {
+  tone?: 'brand' | 'neutral' | 'success' | 'warning' | 'danger';
+  class?: string;
+}
+
+const { tone = 'brand', class: className = '' } = Astro.props;
+
+const classes = [
+  'ui-badge',
+  tone === 'brand' ? '' : `ui-badge--${tone}`,
+  className
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<span class={classes}>
+  <slot />
+</span>

@@ -1,0 +1,5 @@
+---
+const { class: className = '', ...attrs } = Astro.props as Record<string, unknown>;
+---
+
+<input class={`ui-input ${className}`.trim()} {...attrs} />

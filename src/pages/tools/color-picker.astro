@@ -1,0 +1,411 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+---
+
+<ToolLayout title="Color Picker & Palette Extraction">
+  <section class="tool-grid">
+    <Card interactive={false} class="image-card">
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Image Input</h2>
+          <p class="ui-card__description">Upload an image, zoom, and click any pixel to sample its color.</p>
+        </div>
+        <Badge tone="neutral">Client-side</Badge>
+      </div>
+
+      <Field label="Image file" htmlFor="image-file" hint="PNG, JPG, WEBP, GIF, and SVG are supported.">
+        <Input id="image-file" type="file" accept="image/*" />
+      </Field>
+
+      <div class="controls">
+        <Field label="Zoom" htmlFor="zoom-range">
+          <input id="zoom-range" type="range" min="1" max="8" value="1" step="0.25" />
+        </Field>
+        <p id="zoom-value" class="zoom-value">1x</p>
+      </div>
+
+      <div class="canvas-shell" id="canvas-shell">
+        <div class="canvas-stage" id="canvas-stage">
+          <canvas id="image-canvas" aria-label="Image sampling canvas"></canvas>
+          <p id="canvas-placeholder" class="canvas-placeholder">Upload an image to begin sampling colors.</p>
+        </div>
+      </div>
+    </Card>
+
+    <div class="side-panel">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Sampled Color</h2>
+            <p class="ui-card__description">Click a pixel in the image to get HEX, RGB, and HSL values.</p>
+          </div>
+        </div>
+
+        <div class="sample-preview">
+          <span id="sample-swatch" class="swatch" aria-hidden="true"></span>
+          <div class="sample-meta">
+            <p id="sample-hex">HEX: -</p>
+            <p id="sample-rgb">RGB: -</p>
+            <p id="sample-hsl">HSL: -</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <Button id="copy-hex" variant="ghost" size="sm">Copy HEX</Button>
+          <Button id="copy-rgb" variant="ghost" size="sm">Copy RGB</Button>
+          <Button id="copy-hsl" variant="ghost" size="sm">Copy HSL</Button>
+        </div>
+      </Card>
+
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Palette Extraction</h2>
+            <p class="ui-card__description">Extract dominant palette swatches from the loaded image.</p>
+          </div>
+        </div>
+
+        <div class="palette-controls">
+          <Field label="Number of colors" htmlFor="palette-count">
+            <Input id="palette-count" type="number" min="2" max="12" value="6" />
+          </Field>
+          <Button id="extract-palette" variant="primary">Extract palette</Button>
+        </div>
+
+        <div id="palette-output" class="palette-grid" aria-live="polite">
+          <p class="placeholder">Palette swatches will appear here.</p>
+        </div>
+      </Card>
+    </div>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 92rem) !important;
+    max-width: min(100%, 92rem) !important;
+  }
+
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
+    align-items: start;
+  }
+
+  .image-card {
+    min-width: 0;
+  }
+
+  .side-panel {
+    display: grid;
+    gap: var(--space-xl);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .controls {
+    margin-top: var(--space-md);
+    display: flex;
+    align-items: end;
+    gap: var(--space-md);
+  }
+
+  .controls input[type='range'] {
+    width: min(360px, 100%);
+  }
+
+  .zoom-value {
+    min-width: 3rem;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+  }
+
+  .canvas-shell {
+    margin-top: var(--space-md);
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 78%, transparent);
+    padding: var(--space-md);
+    height: clamp(280px, 52vh, 560px);
+    overflow: auto;
+    position: relative;
+  }
+
+  .canvas-stage {
+    min-width: 100%;
+    min-height: 100%;
+    width: max-content;
+    display: grid;
+    place-items: center;
+  }
+
+  .canvas-shell canvas {
+    display: none;
+    border-radius: var(--radius-sm);
+    cursor: crosshair;
+    image-rendering: pixelated;
+    max-width: none;
+  }
+
+  .canvas-placeholder {
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  .sample-preview {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .swatch {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: transparent;
+  }
+
+  .sample-meta {
+    display: grid;
+    gap: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .palette-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: end;
+  }
+
+  .palette-grid {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  :global(.palette-grid .swatch-card) {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  :global(.palette-grid .swatch-card .swatch) {
+    width: 100%;
+    height: 48px;
+  }
+
+  :global(.palette-grid .swatch-values) {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  :global(.palette-grid .placeholder) {
+    color: var(--text-tertiary);
+  }
+
+  @media (max-width: 1080px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const fileInput = document.getElementById('image-file') as HTMLInputElement | null;
+  const zoomRange = document.getElementById('zoom-range') as HTMLInputElement | null;
+  const zoomValue = document.getElementById('zoom-value');
+  const canvasShell = document.getElementById('canvas-shell') as HTMLElement | null;
+  const canvas = document.getElementById('image-canvas') as HTMLCanvasElement | null;
+  const canvasPlaceholder = document.getElementById('canvas-placeholder');
+  const sampleSwatch = document.getElementById('sample-swatch');
+  const sampleHex = document.getElementById('sample-hex');
+  const sampleRgb = document.getElementById('sample-rgb');
+  const sampleHsl = document.getElementById('sample-hsl');
+  const paletteOutput = document.getElementById('palette-output');
+  const paletteCount = document.getElementById('palette-count') as HTMLInputElement | null;
+
+  let imageData: ImageData | null = null;
+  let colorLogic: typeof import('../../tools/color-picker/logic') | null = null;
+  let latestSample = { hex: '', rgb: '', hsl: '' };
+
+  const getLogic = async () => {
+    if (!colorLogic) {
+      colorLogic = await import('../../tools/color-picker/logic');
+    }
+    return colorLogic;
+  };
+
+  const setSampleDisplay = (hexValue: string, rgbValue: string, hslValue: string) => {
+    latestSample = { hex: hexValue, rgb: rgbValue, hsl: hslValue };
+    if (sampleSwatch) sampleSwatch.setAttribute('style', `background:${hexValue === '-' ? 'transparent' : hexValue}`);
+    if (sampleHex) sampleHex.textContent = `HEX: ${hexValue}`;
+    if (sampleRgb) sampleRgb.textContent = `RGB: ${rgbValue}`;
+    if (sampleHsl) sampleHsl.textContent = `HSL: ${hslValue}`;
+  };
+
+  const syncCanvasZoom = () => {
+    if (!canvas || !zoomRange) return;
+    const zoom = Number(zoomRange.value || '1');
+    let fitScale = 1;
+
+    if (canvasShell && canvas.width > 0) {
+      const shellStyles = window.getComputedStyle(canvasShell);
+      const paddingX =
+        Number.parseFloat(shellStyles.paddingLeft || '0') + Number.parseFloat(shellStyles.paddingRight || '0');
+      const paddingY =
+        Number.parseFloat(shellStyles.paddingTop || '0') + Number.parseFloat(shellStyles.paddingBottom || '0');
+      const availableWidth = Math.max(1, canvasShell.clientWidth - paddingX);
+      const availableHeight = Math.max(1, canvasShell.clientHeight - paddingY);
+      fitScale = Math.min(1, availableWidth / canvas.width, availableHeight / canvas.height);
+    }
+
+    const displayScale = fitScale * zoom;
+    canvas.style.width = `${Math.max(1, Math.round(canvas.width * displayScale))}px`;
+    canvas.style.height = `${Math.max(1, Math.round(canvas.height * displayScale))}px`;
+    if (zoomValue) zoomValue.textContent = `${zoom.toFixed(2).replace(/\.00$/, '')}x`;
+  };
+
+  const renderPalette = async () => {
+    if (!imageData || !paletteOutput || !canvas) return;
+
+    const { extractPalette, formatHsl, formatRgb, rgbToHex, rgbToHsl } = await getLogic();
+    const count = Math.max(2, Math.min(12, Number(paletteCount?.value ?? '6') || 6));
+    const palette = extractPalette(imageData.data, canvas.width, canvas.height, { colorCount: count });
+
+    if (palette.length === 0) {
+      paletteOutput.innerHTML = '<p class="placeholder">No opaque pixels found for palette extraction.</p>';
+      return;
+    }
+
+    paletteOutput.innerHTML = palette
+      .map((color) => {
+        const hex = rgbToHex(color);
+        const rgb = formatRgb(color);
+        const hsl = formatHsl(rgbToHsl(color));
+        return `
+          <article class="swatch-card">
+            <span class="swatch" style="background:${hex}"></span>
+            <div class="swatch-values">
+              <p>${hex}</p>
+              <p>${rgb}</p>
+              <p>${hsl}</p>
+            </div>
+            <button class="ui-button ui-button--ghost ui-button--sm" data-copy="${hex}">Copy HEX</button>
+          </article>
+        `;
+      })
+      .join('');
+  };
+
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file || !canvas) return;
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      const maxDimension = 1200;
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas rendering is not supported in this browser.');
+      context.clearRect(0, 0, width, height);
+      context.drawImage(bitmap, 0, 0, width, height);
+      imageData = context.getImageData(0, 0, width, height);
+
+      canvas.style.display = 'block';
+      if (canvasPlaceholder) {
+        canvasPlaceholder.style.display = 'none';
+        canvasPlaceholder.textContent = 'Upload an image to begin sampling colors.';
+      }
+      syncCanvasZoom();
+      setSampleDisplay('-', '-', '-');
+
+      if (paletteOutput) paletteOutput.innerHTML = '<p class="placeholder">Click "Extract palette" to generate swatches.</p>';
+    } catch (error) {
+      imageData = null;
+      canvas.width = 0;
+      canvas.height = 0;
+      canvas.style.display = 'none';
+      if (canvasPlaceholder) {
+        canvasPlaceholder.textContent =
+          error instanceof Error && error.message
+            ? `Could not load image: ${error.message}`
+            : 'Could not load the selected image. Try another file.';
+        canvasPlaceholder.style.display = 'block';
+      }
+      setSampleDisplay('-', '-', '-');
+      if (paletteOutput) paletteOutput.innerHTML = '<p class="placeholder">Palette swatches will appear here.</p>';
+    }
+  });
+
+  zoomRange?.addEventListener('input', syncCanvasZoom);
+  window.addEventListener('resize', syncCanvasZoom);
+
+  canvas?.addEventListener('click', async (event) => {
+    if (!canvas || !imageData) return;
+    const logic = await getLogic();
+
+    const rect = canvas.getBoundingClientRect();
+    const { x, y } = logic.mapClientPointToPixel(event.clientX, event.clientY, rect, canvas.width, canvas.height);
+    const color = logic.samplePixel(imageData.data, canvas.width, canvas.height, x, y);
+    const hex = logic.rgbToHex(color);
+    const rgb = logic.formatRgb(color);
+    const hsl = logic.formatHsl(logic.rgbToHsl(color));
+    setSampleDisplay(hex, rgb, hsl);
+  });
+
+  document.getElementById('extract-palette')?.addEventListener('click', () => {
+    renderPalette();
+  });
+
+  paletteOutput?.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-copy]');
+    if (!button) return;
+    const value = button.dataset.copy;
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+  });
+
+  document.getElementById('copy-hex')?.addEventListener('click', async () => {
+    if (!latestSample.hex || latestSample.hex === '-') return;
+    await navigator.clipboard.writeText(latestSample.hex);
+  });
+  document.getElementById('copy-rgb')?.addEventListener('click', async () => {
+    if (!latestSample.rgb || latestSample.rgb === '-') return;
+    await navigator.clipboard.writeText(latestSample.rgb);
+  });
+  document.getElementById('copy-hsl')?.addEventListener('click', async () => {
+    if (!latestSample.hsl || latestSample.hsl === '-') return;
+    await navigator.clipboard.writeText(latestSample.hsl);
+  });
+
+  syncCanvasZoom();
+</script>

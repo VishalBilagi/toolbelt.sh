@@ -1,0 +1,7 @@
+---
+const { class: className = '', ...attrs } = Astro.props as Record<string, unknown>;
+---
+
+<select class={`ui-select ${className}`.trim()} {...attrs}>
+  <slot />
+</select>

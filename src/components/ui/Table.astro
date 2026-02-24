@@ -1,0 +1,33 @@
+---
+interface Props {
+  caption?: string;
+  dense?: boolean;
+  striped?: boolean;
+  class?: string;
+  wrapClass?: string;
+}
+
+const {
+  caption,
+  dense = false,
+  striped = false,
+  class: className = '',
+  wrapClass = ''
+} = Astro.props;
+
+const tableClasses = [
+  'ui-table',
+  dense ? 'ui-table--dense' : '',
+  striped ? 'ui-table--striped' : '',
+  className
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div class={`ui-table-wrap ${wrapClass}`.trim()}>
+  <table class={tableClasses}>
+    {caption && <caption>{caption}</caption>}
+    <slot />
+  </table>
+</div>

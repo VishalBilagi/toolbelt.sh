@@ -1,0 +1,21 @@
+---
+const target = '/tools/color-picker';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Redirecting…</title>
+    <script is:inline>
+      window.location.replace('/tools/color-picker');
+    </script>
+  </head>
+  <body>
+    <p>
+      Redirecting to <a href={target}>{target}</a>...
+    </p>
+  </body>
+  </html>

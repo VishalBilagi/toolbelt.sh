@@ -1,0 +1,13 @@
+---
+interface Props {
+  as?: 'section' | 'div' | 'aside';
+  class?: string;
+}
+
+const { as = 'section', class: className = '' } = Astro.props;
+const Tag = as;
+---
+
+<Tag class={`ui-panel ${className}`.trim()}>
+  <slot />
+</Tag>

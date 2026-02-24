@@ -1,0 +1,33 @@
+---
+interface Props {
+  as?: 'article' | 'section' | 'div';
+  interactive?: boolean;
+  variant?: 'default' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  class?: string;
+}
+
+const {
+  as = 'article',
+  interactive = true,
+  variant = 'default',
+  size = 'md',
+  class: className = ''
+} = Astro.props;
+
+const Tag = as;
+
+const classes = [
+  'ui-card',
+  interactive ? 'ui-card--interactive' : '',
+  variant === 'outline' ? 'ui-card--outline' : '',
+  size !== 'md' ? `ui-card--${size}` : '',
+  className
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<Tag class={classes}>
+  <slot />
+</Tag>

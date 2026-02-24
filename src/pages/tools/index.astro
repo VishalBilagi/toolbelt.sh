@@ -1,0 +1,27 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import Button from '../../components/ui/Button.astro';
+import ToolDirectory from '../../components/ToolDirectory.astro';
+---
+
+<AppShell title="All Tools">
+  <main class="ui-page tools-page">
+    <div class="tools-actions ui-cluster">
+    </div>
+
+    <ToolDirectory />
+  </main>
+</AppShell>
+
+<style>
+  .tools-page {
+    padding-top: var(--space-3xl);
+    padding-bottom: var(--space-4xl);
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .tools-actions {
+    justify-content: flex-start;
+  }
+</style>

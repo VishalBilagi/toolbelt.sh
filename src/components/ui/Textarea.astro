@@ -1,0 +1,11 @@
+---
+interface Props {
+  value?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { value = '', class: className = '', ...attrs } = Astro.props as Props;
+---
+
+<textarea class={`ui-textarea ${className}`.trim()} {...attrs}>{value}</textarea>

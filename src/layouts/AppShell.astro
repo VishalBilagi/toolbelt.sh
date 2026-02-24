@@ -1,0 +1,813 @@
+---
+import globalStyles from '../styles/globals.css?inline';
+import { toolSections, type ToolIcon } from '../data/tool-directory';
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+const pathname = Astro.url.pathname;
+const isHomeRoute = pathname === '/' || pathname === '/index.html';
+const disableScrollReveal = pathname.startsWith('/tools/') && pathname !== '/tools' && pathname !== '/tools/';
+const githubUrl = 'https://github.com';
+const ldClientId = `${import.meta.env.LD_CLIENT_ID ?? ''}`.trim();
+
+const coreNavItems = [
+  { href: '/', label: 'Home', matches: ['/', '/index.html'] },
+  { href: '/tools', label: 'All tools', matches: ['/tools'] }
+];
+
+const isNavActive = (href: string, matches: string[]): boolean =>
+  href === '/tools'
+    ? matches.some((match) => pathname === match || pathname === `${match}/`)
+    : matches.some((match) => pathname === match || pathname.startsWith(`${match}/`));
+
+const isToolActive = (href: string): boolean => pathname === href || pathname.startsWith(`${href}/`);
+
+const isSectionActive = (section: (typeof toolSections)[number]): boolean =>
+  section.tools.some((tool) => isToolActive(tool.href));
+
+const boxIconByToolIcon: Record<ToolIcon, string> = {
+  qr: 'qr-scan',
+  crop: 'crop',
+  svg: 'image-sparkle',
+  data: 'database',
+  lock: 'lock'
+};
+---
+<!doctype html>
+<html lang="en" data-mode="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <style is:inline set:html={globalStyles}></style>
+    <script is:inline>
+      (() => {
+        const savedMode = localStorage.getItem('mode');
+        const mode = savedMode === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-mode', mode);
+      })();
+    </script>
+  </head>
+  <body>
+    <script is:inline>
+      const html = document.documentElement;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const updateModeToggleState = () => {
+        const mode = html.getAttribute('data-mode') === 'light' ? 'light' : 'dark';
+        const nextMode = mode === 'dark' ? 'light' : 'dark';
+
+        document.querySelectorAll('[data-mode-toggle]').forEach((node) => {
+          node.setAttribute('aria-label', `Switch to ${nextMode} mode`);
+          node.setAttribute('title', `Switch to ${nextMode} mode`);
+        });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateModeToggleState);
+      } else {
+        updateModeToggleState();
+      }
+
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const toggle = target.closest('[data-mode-toggle]');
+        if (!toggle) return;
+
+        const currentMode = html.getAttribute('data-mode') === 'light' ? 'light' : 'dark';
+        const nextMode = currentMode === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-mode', nextMode);
+        localStorage.setItem('mode', nextMode);
+        updateModeToggleState();
+      });
+
+      const setupScrollReveal = () => {
+        if ({disableScrollReveal ? 'true' : 'false'} === 'true') return;
+        if (prefersReducedMotion || !('IntersectionObserver' in window)) return;
+
+        const selector = '.ui-card, .tool-card, .trust-item, .tool-category, .ui-panel, .ui-empty-state';
+        const elements = Array.from(document.querySelectorAll(selector)).filter(
+          (node) => !node.closest('.site-header')
+        );
+        if (!elements.length) return;
+
+        let index = 0;
+        for (const element of elements) {
+          if (!(element instanceof HTMLElement)) continue;
+          if (element.classList.contains('reveal-on-scroll')) continue;
+
+          element.classList.add('reveal-on-scroll');
+          element.style.setProperty('--reveal-delay', `${Math.min(index * 18, 120)}ms`);
+          index += 1;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries, currentObserver) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-visible');
+              currentObserver.unobserve(entry.target);
+            }
+          },
+          { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
+        );
+
+        for (const element of elements) {
+          observer.observe(element);
+        }
+      };
+
+      const setupPageTransitions = () => {
+        if (prefersReducedMotion) return;
+
+        window.addEventListener('pageshow', () => {
+          document.body.classList.remove('is-page-leaving');
+        });
+
+        document.addEventListener('click', (event) => {
+          if (event.defaultPrevented || event.button !== 0) return;
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+
+          const link = target.closest('a[href]');
+          if (!(link instanceof HTMLAnchorElement)) return;
+          if (link.target && link.target !== '_self') return;
+          if (link.hasAttribute('download')) return;
+          if (link.dataset.noPageTransition === 'true') return;
+
+          const url = new URL(link.href, window.location.href);
+          if (url.origin !== window.location.origin) return;
+
+          const isSameRoute = url.pathname === window.location.pathname && url.search === window.location.search;
+          if (isSameRoute) return;
+
+          event.preventDefault();
+          document.body.classList.add('is-page-leaving');
+
+          window.setTimeout(() => {
+            window.location.assign(url.toString());
+          }, 100);
+        });
+      };
+
+      const setupSamePageAnchorScroll = () => {
+        const normalizePath = (value) => {
+          const withoutIndex = value.replace(/\/index\.html$/, '/');
+          const collapsed = withoutIndex.replace(/\/{2,}/g, '/');
+          if (collapsed === '') return '/';
+          return collapsed.endsWith('/') ? collapsed : `${collapsed}/`;
+        };
+
+        document.addEventListener('click', (event) => {
+          if (event.defaultPrevented || event.button !== 0) return;
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+
+          const link = target.closest('a[href]');
+          if (!(link instanceof HTMLAnchorElement)) return;
+          if (link.target && link.target !== '_self') return;
+          if (link.hasAttribute('download')) return;
+
+          const href = link.getAttribute('href');
+          if (!href || !href.includes('#')) return;
+
+          const url = new URL(link.href, window.location.href);
+          if (url.origin !== window.location.origin) return;
+          if (!url.hash || url.hash === '#') return;
+
+          const samePath = normalizePath(url.pathname) === normalizePath(window.location.pathname);
+          if (!samePath || url.search !== window.location.search) return;
+
+          const targetId = decodeURIComponent(url.hash.slice(1));
+          const targetElement = document.getElementById(targetId);
+          if (!(targetElement instanceof HTMLElement)) return;
+
+          event.preventDefault();
+
+          const header = document.querySelector('.site-header');
+          const headerOffset = header instanceof HTMLElement ? header.getBoundingClientRect().height + 12 : 12;
+          const top = Math.max(0, window.scrollY + targetElement.getBoundingClientRect().top - headerOffset);
+
+          if (window.location.hash !== url.hash) {
+            history.pushState(null, '', url.hash);
+          }
+
+          window.scrollTo({
+            top,
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
+          });
+        });
+      };
+
+      const setupGroupedNavHoverMenus = () => {
+        const groups = Array.from(document.querySelectorAll('.nav-group'));
+        if (!groups.length) return;
+
+        for (const group of groups) {
+          if (!(group instanceof HTMLElement)) continue;
+
+          const menu = group.querySelector('.nav-menu');
+          let closeTimer = 0;
+
+          const open = () => {
+            window.clearTimeout(closeTimer);
+            group.classList.add('is-hover-open');
+          };
+
+          const closeSoon = () => {
+            window.clearTimeout(closeTimer);
+            closeTimer = window.setTimeout(() => {
+              group.classList.remove('is-hover-open');
+            }, 90);
+          };
+
+          group.addEventListener('mouseenter', open);
+          group.addEventListener('mouseleave', closeSoon);
+
+          if (menu instanceof HTMLElement) {
+            menu.addEventListener('mouseenter', open);
+            menu.addEventListener('mouseleave', closeSoon);
+          }
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          setupScrollReveal();
+          setupSamePageAnchorScroll();
+          setupPageTransitions();
+          setupGroupedNavHoverMenus();
+        });
+      } else {
+        setupScrollReveal();
+        setupSamePageAnchorScroll();
+        setupPageTransitions();
+        setupGroupedNavHoverMenus();
+      }
+    </script>
+    <script is:inline define:vars={{ ldClientId }}>
+      window.__toolbeltConfig = {
+        ...(window.__toolbeltConfig || {}),
+        ldClientId
+      };
+    </script>
+    <script>
+      import { getIcons, Moon, Sun, Github, Lock, Bolt, MobileAlt, QrScan, Crop, Database, Grid, ImageSparkle } from '@boxicons/js';
+      import { configureFeatureFlags, primeFeatureFlags } from '../lib/feature-flags';
+
+      const mountIcons = () => {
+        getIcons({
+          icons: {
+            Moon,
+            Sun,
+            Github,
+            Lock,
+            Bolt,
+            MobileAlt,
+            QrScan,
+            Crop,
+            Database,
+            Grid,
+            ImageSparkle
+          }
+        });
+      };
+
+      const runtimeLdClientId =
+        (window.__toolbeltConfig && typeof window.__toolbeltConfig.ldClientId === 'string'
+          ? window.__toolbeltConfig.ldClientId
+          : '') || '';
+
+      configureFeatureFlags({ ldClientId: runtimeLdClientId });
+      void primeFeatureFlags();
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', mountIcons, { once: true });
+      } else {
+        mountIcons();
+      }
+    </script>
+    <div class="app-frame">
+      <header
+        class:list={['site-header', isHomeRoute && 'site-header--home']}
+        aria-label="Global Header"
+      >
+        <div class="ui-page site-header-inner">
+          <a href="/" class="brand">toolbelt.sh</a>
+
+          <nav class="site-nav" aria-label="Primary">
+            {
+              coreNavItems.map((item) => (
+                <a
+                  href={item.href}
+                  class={`nav-link ${isNavActive(item.href, item.matches) ? 'nav-link--active' : ''}`.trim()}
+                >
+                  {item.label}
+                </a>
+              ))
+            }
+
+            {
+              toolSections.map((section) => (
+                <div class={`nav-group ${isSectionActive(section) ? 'nav-group--active' : ''}`.trim()}>
+                  <span class="nav-group-trigger">
+                    {section.title}
+                    <span class="nav-caret" aria-hidden="true">▾</span>
+                  </span>
+
+                  <div class="nav-menu" role="menu" aria-label={`${section.title} tools`}>
+                    {section.tools.map((tool) => (
+                      <a
+                        href={tool.href}
+                        role="menuitem"
+                        class={`nav-menu-link ${isToolActive(tool.href) ? 'nav-menu-link--active' : ''}`.trim()}
+                      >
+                        <span class="nav-menu-icon" aria-hidden="true">
+                          <i data-bx={boxIconByToolIcon[tool.icon]} data-bx-size="xs"></i>
+                        </span>
+                        <span class="nav-menu-copy">
+                          <span class="nav-menu-title">{tool.name}</span>
+                          <span class="nav-menu-desc">{tool.description}</span>
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))
+            }
+          </nav>
+
+          <div class="header-actions">
+            <button class="theme-toggle" type="button" data-mode-toggle aria-label="Toggle theme">
+              <i class="icon icon-moon" data-bx="moon" aria-hidden="true"></i>
+              <i class="icon icon-sun" data-bx="sun" aria-hidden="true"></i>
+            </button>
+
+            <a class="github-link" href={githubUrl} target="_blank" rel="noreferrer">
+              <i class="github-mark" data-bx="github" data-bx-pack="brands" aria-hidden="true"></i>
+              <span>GitHub</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <slot />
+    </div>
+  </body>
+</html>
+
+<style>
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    isolation: isolate;
+    backdrop-filter: none;
+    background: transparent;
+    padding-top: var(--space-lg);
+    padding-bottom: var(--space-md);
+  }
+
+  .site-header-inner {
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+    width: auto;
+    max-width: none;
+    margin-inline: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+    padding: 0.55rem;
+  }
+
+  .site-header--home {
+    position: fixed;
+    left: 0;
+    right: 0;
+  }
+
+  .brand {
+    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    font-size: 1rem;
+    padding-inline: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .brand:hover {
+    color: var(--text-primary);
+  }
+
+  .site-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.32rem;
+    margin-right: auto;
+    position: relative;
+  }
+
+  .nav-link,
+  .nav-group-trigger {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    padding: 0.3rem 0.62rem;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .nav-link:hover,
+  .nav-group-trigger:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border-default));
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  }
+
+  .nav-link--active {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+  }
+
+  .nav-group {
+    position: relative;
+    padding-bottom: 0.5rem;
+    margin-bottom: -0.5rem;
+  }
+
+  .nav-group::after {
+    content: '';
+    position: absolute;
+    top: calc(100% - 0.5rem);
+    left: 0;
+    right: 0;
+    height: 0.5rem;
+  }
+
+  .nav-group-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    font-family: var(--font-sans);
+  }
+
+  .nav-group--active .nav-group-trigger {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+  }
+
+  .nav-caret {
+    font-size: 0.62rem;
+    color: var(--text-tertiary);
+    transform: translateY(1px);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+  }
+
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 20rem;
+    max-width: min(24rem, 92vw);
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.48rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border-default));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-surface) 96%, transparent);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition:
+      opacity var(--transition-fast),
+      transform var(--transition-fast),
+      visibility var(--transition-fast);
+    z-index: 80;
+  }
+
+  .nav-group:hover .nav-menu,
+  .nav-group.is-hover-open .nav-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .nav-group:hover .nav-caret,
+  .nav-group.is-hover-open .nav-caret {
+    transform: translateY(1px) rotate(180deg);
+    color: var(--text-primary);
+  }
+
+  .nav-menu-link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.5rem;
+    padding: 0.45rem 0.56rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .nav-menu-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 0.42rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border-default));
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(1px);
+    flex-shrink: 0;
+  }
+
+  :global(.nav-menu-icon svg) {
+    width: 0.74rem;
+    height: 0.74rem;
+  }
+
+  .nav-menu-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.08rem;
+  }
+
+  .nav-menu-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+
+  .nav-menu-desc {
+    font-size: 0.72rem;
+    line-height: 1.36;
+    color: var(--text-tertiary);
+  }
+
+  .nav-menu-link:hover,
+  .nav-menu-link:focus-visible,
+  .nav-menu-link--active {
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+    color: var(--text-primary);
+  }
+
+  .nav-menu-link:hover .nav-menu-icon,
+  .nav-menu-link:focus-visible .nav-menu-icon,
+  .nav-menu-link--active .nav-menu-icon {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.52rem;
+  }
+
+  .theme-toggle {
+    width: 2.35rem;
+    height: 2.35rem;
+    position: relative;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+  }
+
+  .theme-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border-default));
+    transform: translateY(-1px);
+  }
+
+  :global(svg.icon) {
+    width: 1rem;
+    height: 1rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+    transition:
+      opacity 170ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :global(svg.icon-moon) {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+
+  :global(svg.icon-sun) {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-40deg) scale(0.7);
+  }
+
+  :global(html[data-mode='light'] svg.icon-sun) {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+
+  :global(html[data-mode='light'] svg.icon-moon) {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(40deg) scale(0.7);
+  }
+
+  .github-link {
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.65rem;
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    padding: 0.46rem 0.72rem;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .github-link:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border-default));
+    transform: translateY(-1px);
+  }
+
+  :global(svg.github-mark) {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  :global(.app-frame) {
+    animation: page-enter 190ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    transform-origin: 50% 0;
+    will-change: opacity, transform, filter;
+  }
+
+  :global(body.is-page-leaving .app-frame) {
+    animation: page-leave 110ms ease both;
+    pointer-events: none;
+  }
+
+  :global(.reveal-on-scroll) {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.996);
+    filter: blur(1.2px);
+    transition:
+      opacity 220ms ease,
+      transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+      filter 180ms ease;
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform, filter;
+  }
+
+  :global(.reveal-on-scroll.is-visible) {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0) scale(0.998);
+      filter: blur(2px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes page-leave {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translate3d(0, -4px, 0) scale(0.998);
+      filter: blur(1.5px);
+    }
+  }
+
+  @media (max-width: 1080px) {
+    .site-header-inner {
+      flex-wrap: wrap;
+      row-gap: var(--space-sm);
+      padding: 0.7rem;
+    }
+
+    .brand {
+      font-size: 1rem;
+    }
+
+    .header-actions {
+      margin-left: auto;
+    }
+
+    .site-nav {
+      order: 3;
+      width: 100%;
+      row-gap: 0.36rem;
+    }
+
+    .nav-menu {
+      min-width: min(24rem, 96vw);
+      left: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .site-nav {
+      gap: 0.22rem;
+    }
+
+    .nav-link,
+    .nav-group-trigger {
+      font-size: 0.76rem;
+      padding: 0.28rem 0.54rem;
+    }
+
+    .nav-group {
+      width: 100%;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .nav-group::after {
+      display: none;
+    }
+
+    .nav-menu {
+      position: static;
+      margin-top: 0.36rem;
+      max-width: none;
+    }
+
+    .github-link span {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html) {
+      scroll-behavior: auto;
+    }
+
+    :global(.app-frame),
+    :global(body.is-page-leaving .app-frame) {
+      animation: none !important;
+    }
+
+    :global(.reveal-on-scroll) {
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+      transition: none !important;
+    }
+
+    :global(svg.icon) {
+      transition: none !important;
+    }
+  }
+</style>

@@ -1,0 +1,254 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import Badge from '../components/ui/Badge.astro';
+import Button from '../components/ui/Button.astro';
+import Card from '../components/ui/Card.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Field from '../components/ui/Field.astro';
+import Input from '../components/ui/Input.astro';
+import Panel from '../components/ui/Panel.astro';
+import Select from '../components/ui/Select.astro';
+import Table from '../components/ui/Table.astro';
+import Textarea from '../components/ui/Textarea.astro';
+
+const tokenGroups = [
+  {
+    title: 'Surface',
+    values: ['var(--bg-base)', 'var(--bg-surface)', 'var(--bg-elevated)', 'var(--bg-inset)']
+  },
+  {
+    title: 'Text',
+    values: ['var(--text-primary)', 'var(--text-secondary)', 'var(--text-tertiary)', 'var(--text-link)']
+  },
+  {
+    title: 'State',
+    values: ['var(--state-success)', 'var(--state-warning)', 'var(--state-danger)', 'var(--accent)']
+  }
+];
+
+const tableRows = [
+  ['Button', 'Primary/Secondary/Ghost/Danger', 'Done'],
+  ['Card', 'Default, outline, interactive', 'Done'],
+  ['Field/Input', 'Label, hint, error, control primitives', 'Done'],
+  ['Table', 'Caption, dense, striped', 'Done'],
+  ['EmptyState', 'Standard placeholder block', 'Done']
+];
+---
+
+<AppShell title="Component Library">
+  <main class="ui-page component-page">
+    <header class="ui-stack hero">
+      <Badge tone="neutral">Design System</Badge>
+      <h1 class="gradient-text">Component Library</h1>
+      <p>
+        Shared primitives and theme tokens for this browser-only tools app.
+        Use these components directly for all new tool pages.
+      </p>
+      <div class="ui-cluster">
+        <Button href="/tools" variant="secondary" size="sm">Back to tools</Button>
+        <Button href="/" variant="ghost" size="sm">Home</Button>
+      </div>
+    </header>
+
+    <section class="ui-stack">
+      <div>
+        <h2>Theme Tokens</h2>
+        <p class="text-secondary">Semantic token groups used by both dark and light mode.</p>
+      </div>
+
+      <div class="ui-grid token-grid">
+        {tokenGroups.map((group) => (
+          <Card interactive={false} size="sm">
+            <h3 class="ui-card__title">{group.title}</h3>
+            <div class="swatches">
+              {group.values.map((value) => (
+                <div class="swatch-item">
+                  <span class="swatch" style={`background:${value}`}></span>
+                  <code>{value}</code>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </section>
+
+    <section class="ui-stack">
+      <div>
+        <h2>Buttons and Badges</h2>
+        <p class="text-secondary">Actions, states, and quick status labels.</p>
+      </div>
+
+      <Card interactive={false}>
+        <div class="ui-stack">
+          <div class="ui-cluster">
+            <Button variant="primary">Primary</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="danger">Danger</Button>
+          </div>
+          <div class="ui-cluster">
+            <Button size="sm" variant="secondary">Small</Button>
+            <Button size="md" variant="secondary">Medium</Button>
+            <Button size="lg" variant="secondary">Large</Button>
+          </div>
+          <div class="ui-cluster">
+            <Badge>Brand</Badge>
+            <Badge tone="neutral">Neutral</Badge>
+            <Badge tone="success">Success</Badge>
+            <Badge tone="warning">Warning</Badge>
+            <Badge tone="danger">Danger</Badge>
+          </div>
+        </div>
+      </Card>
+    </section>
+
+    <section class="ui-stack">
+      <div>
+        <h2>Cards and Panels</h2>
+        <p class="text-secondary">Surface primitives for tool cards and configuration blocks.</p>
+      </div>
+
+      <div class="ui-grid ui-grid--cards">
+        <Card>
+          <h3 class="ui-card__title">Interactive Card</h3>
+          <p class="ui-card__description">Default hover behavior for links and tool entries.</p>
+          <div class="ui-card__footer">
+            <Badge tone="success">Ready</Badge>
+            <Button size="sm" variant="ghost">Open</Button>
+          </div>
+        </Card>
+
+        <Card variant="outline" interactive={false}>
+          <h3 class="ui-card__title">Outline Card</h3>
+          <p class="ui-card__description">Useful for nested sections or low-emphasis groups.</p>
+        </Card>
+
+        <Panel>
+          <h3 class="ui-card__title">Panel</h3>
+          <p class="ui-card__description">Compact framed section for grouped controls.</p>
+        </Panel>
+      </div>
+    </section>
+
+    <section class="ui-stack">
+      <div>
+        <h2>Form Controls</h2>
+        <p class="text-secondary">Field wrappers with standard input components.</p>
+      </div>
+
+      <Card interactive={false}>
+        <form class="form-grid" onsubmit="return false;">
+          <Field label="File name" htmlFor="demo-file" hint="Used for export naming.">
+            <Input id="demo-file" placeholder="banner-2026" />
+          </Field>
+
+          <Field label="Format" htmlFor="demo-format">
+            <Select id="demo-format">
+              <option>PNG</option>
+              <option>SVG</option>
+              <option>WebP</option>
+            </Select>
+          </Field>
+
+          <Field label="Notes" htmlFor="demo-notes" error="Example validation message.">
+            <Textarea id="demo-notes" placeholder="Optional transformation notes" />
+          </Field>
+
+          <div class="ui-cluster">
+            <Button variant="primary" type="submit">Apply</Button>
+            <Button variant="secondary" type="button">Reset</Button>
+          </div>
+        </form>
+      </Card>
+    </section>
+
+    <section class="ui-stack">
+      <div>
+        <h2>Table and Empty State</h2>
+        <p class="text-secondary">Structured status views and empty placeholders.</p>
+      </div>
+
+      <Card interactive={false}>
+        <div class="ui-stack">
+          <Table caption="Component status" striped>
+            <thead>
+              <tr>
+                <th scope="col">Primitive</th>
+                <th scope="col">Coverage</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows.map((row) => (
+                <tr>
+                  <td>{row[0]}</td>
+                  <td>{row[1]}</td>
+                  <td>{row[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+
+          <EmptyState
+            title="No preview loaded"
+            description="Drop a file or choose a sample preset to initialize a tool workspace."
+          >
+            <Button size="sm" variant="secondary">Load sample</Button>
+          </EmptyState>
+        </div>
+      </Card>
+    </section>
+  </main>
+</AppShell>
+
+<style>
+  .component-page {
+    padding-top: var(--space-3xl);
+    padding-bottom: var(--space-4xl);
+    display: grid;
+    gap: var(--space-3xl);
+  }
+
+  .hero {
+    max-width: min(100%, 48rem);
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5.2vw, 3.5rem);
+  }
+
+  .token-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .swatches {
+    display: grid;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+  }
+
+  .swatch-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .swatch {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    flex-shrink: 0;
+  }
+
+  .swatch-item code {
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+  }
+
+  .form-grid {
+    display: grid;
+    gap: var(--space-lg);
+  }
+</style>

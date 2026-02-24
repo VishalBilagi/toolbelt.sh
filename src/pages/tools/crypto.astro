@@ -1,0 +1,267 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Crypto Utilities">
+  <section class="tool-grid">
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Hashing</h2>
+            <p class="ui-card__description">SHA-256, SHA-1, and MD5 digests for local text input.</p>
+          </div>
+          <Badge tone="neutral">Client-side</Badge>
+        </div>
+
+        <div class="field-grid">
+          <Field label="Input text" htmlFor="hash-input" hint="Data never leaves your browser.">
+            <Textarea id="hash-input" placeholder="Enter text to hash..." />
+          </Field>
+
+          <div class="row">
+            <Field label="Algorithm" htmlFor="hash-algorithm">
+              <Select id="hash-algorithm">
+                <option value="SHA-256">SHA-256</option>
+                <option value="SHA-1">SHA-1</option>
+                <option value="MD5">MD5</option>
+              </Select>
+            </Field>
+            <Field label="Output format" htmlFor="hash-format">
+              <Select id="hash-format">
+                <option value="hex">Hex</option>
+                <option value="base64">Base64</option>
+              </Select>
+            </Field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <Button id="hash-run" variant="primary">Generate hash</Button>
+          <Button id="hash-copy" variant="ghost">Copy</Button>
+          <Button id="hash-download" variant="ghost">Download</Button>
+        </div>
+
+        <pre id="hash-output" class="output" aria-live="polite">Hash output will appear here.</pre>
+      </Card>
+
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">UUID Generator</h2>
+            <p class="ui-card__description">Generate RFC 4122 version 4 UUIDs instantly.</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <Button id="uuid-run" variant="primary">Generate UUID</Button>
+          <Button id="uuid-copy" variant="ghost">Copy</Button>
+        </div>
+        <pre id="uuid-output" class="output" aria-live="polite">UUID will appear here.</pre>
+      </Card>
+    </div>
+
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">HMAC Sign</h2>
+            <p class="ui-card__description">Sign payloads with SHA-256, SHA-1, or MD5 keyed digest.</p>
+          </div>
+          <Badge tone="warning">Web Crypto first</Badge>
+        </div>
+
+        <div class="field-grid">
+          <Field label="Payload" htmlFor="hmac-input">
+            <Textarea id="hmac-input" placeholder="Enter payload..." />
+          </Field>
+          <Field label="Secret key" htmlFor="hmac-key" hint="Key material is used only in this tab.">
+            <Input id="hmac-key" type="password" placeholder="Enter secret key..." />
+          </Field>
+          <div class="row">
+            <Field label="Algorithm" htmlFor="hmac-algorithm">
+              <Select id="hmac-algorithm">
+                <option value="SHA-256">SHA-256</option>
+                <option value="SHA-1">SHA-1</option>
+                <option value="MD5">MD5</option>
+              </Select>
+            </Field>
+            <Field label="Output format" htmlFor="hmac-format">
+              <Select id="hmac-format">
+                <option value="hex">Hex</option>
+                <option value="base64">Base64</option>
+              </Select>
+            </Field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <Button id="hmac-run" variant="primary">Sign payload</Button>
+          <Button id="hmac-copy" variant="ghost">Copy</Button>
+          <Button id="hmac-download" variant="ghost">Download</Button>
+        </div>
+
+        <pre id="hmac-output" class="output" aria-live="polite">HMAC output will appear here.</pre>
+      </Card>
+    </div>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 92rem) !important;
+    max-width: min(100%, 92rem) !important;
+  }
+
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .tool-column {
+    display: grid;
+    gap: var(--space-xl);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .field-grid {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .actions {
+    margin-top: var(--space-lg);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .output {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    min-height: 3.6rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  @media (max-width: 1180px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const hashInput = document.getElementById('hash-input') as HTMLTextAreaElement | null;
+  const hashAlgorithm = document.getElementById('hash-algorithm') as HTMLSelectElement | null;
+  const hashFormat = document.getElementById('hash-format') as HTMLSelectElement | null;
+  const hashOutput = document.getElementById('hash-output');
+
+  const hmacInput = document.getElementById('hmac-input') as HTMLTextAreaElement | null;
+  const hmacKey = document.getElementById('hmac-key') as HTMLInputElement | null;
+  const hmacAlgorithm = document.getElementById('hmac-algorithm') as HTMLSelectElement | null;
+  const hmacFormat = document.getElementById('hmac-format') as HTMLSelectElement | null;
+  const hmacOutput = document.getElementById('hmac-output');
+
+  const uuidOutput = document.getElementById('uuid-output');
+
+  let cryptoLogic: typeof import('../../tools/crypto/logic') | null = null;
+
+  const getLogic = async () => {
+    if (!cryptoLogic) {
+      cryptoLogic = await import('../../tools/crypto/logic');
+    }
+    return cryptoLogic;
+  };
+
+  const setOutput = (element: HTMLElement | null, value: string) => {
+    if (element) element.textContent = value;
+  };
+
+  const copyOutput = async (element: HTMLElement | null) => {
+    const text = element?.textContent?.trim();
+    if (!text || /will appear here\.$/i.test(text)) return;
+    await navigator.clipboard.writeText(text);
+  };
+
+  const downloadOutput = (filename: string, element: HTMLElement | null) => {
+    const text = element?.textContent?.trim();
+    if (!text || /will appear here\.$/i.test(text)) return;
+
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(href);
+  };
+
+  document.getElementById('hash-run')?.addEventListener('click', async () => {
+    const text = hashInput?.value ?? '';
+    const algorithm = (hashAlgorithm?.value ?? 'SHA-256') as 'SHA-256' | 'SHA-1' | 'MD5';
+    const format = (hashFormat?.value ?? 'hex') as 'hex' | 'base64';
+
+    try {
+      setOutput(hashOutput, 'Generating...');
+      const { hashText, formatDigest } = await getLogic();
+      const digestHex = await hashText(algorithm, text);
+      setOutput(hashOutput, formatDigest(digestHex, format));
+    } catch {
+      setOutput(hashOutput, 'Could not generate hash.');
+    }
+  });
+
+  document.getElementById('hmac-run')?.addEventListener('click', async () => {
+    const payload = hmacInput?.value ?? '';
+    const key = hmacKey?.value ?? '';
+    const algorithm = (hmacAlgorithm?.value ?? 'SHA-256') as 'SHA-256' | 'SHA-1' | 'MD5';
+    const format = (hmacFormat?.value ?? 'hex') as 'hex' | 'base64';
+
+    if (!key.trim()) {
+      setOutput(hmacOutput, 'Enter a key before signing.');
+      hmacKey?.focus();
+      return;
+    }
+
+    try {
+      setOutput(hmacOutput, 'Signing...');
+      const { signHmac, formatDigest } = await getLogic();
+      const digestHex = await signHmac(algorithm, payload, key);
+      setOutput(hmacOutput, formatDigest(digestHex, format));
+    } catch {
+      setOutput(hmacOutput, 'Could not sign payload.');
+    }
+  });
+
+  document.getElementById('uuid-run')?.addEventListener('click', async () => {
+    const { generateUuidV4 } = await getLogic();
+    setOutput(uuidOutput, generateUuidV4());
+  });
+
+  document.getElementById('hash-copy')?.addEventListener('click', () => copyOutput(hashOutput));
+  document.getElementById('hmac-copy')?.addEventListener('click', () => copyOutput(hmacOutput));
+  document.getElementById('uuid-copy')?.addEventListener('click', () => copyOutput(uuidOutput));
+
+  document.getElementById('hash-download')?.addEventListener('click', () => downloadOutput('hash.txt', hashOutput));
+  document.getElementById('hmac-download')?.addEventListener('click', () => downloadOutput('hmac.txt', hmacOutput));
+</script>

@@ -1,0 +1,182 @@
+---
+import { toolSections, totalToolCount, type ToolIcon } from '../data/tool-directory';
+
+interface Props {
+  sectionId?: string;
+}
+
+const { sectionId } = Astro.props;
+
+const boxIconByToolIcon: Record<ToolIcon, string> = {
+  qr: 'qr-scan',
+  crop: 'crop',
+  svg: 'image-sparkle',
+  data: 'database',
+  lock: 'lock'
+};
+---
+
+<section id={sectionId} class="tools-section" aria-label="Tool directory">
+  <div class="tools-head">
+    <h2>Tool Directory</h2>
+    <p id="tools-count">{totalToolCount} tools</p>
+  </div>
+
+  {toolSections.map((section) => (
+    <section class="tool-category">
+      <h3 class="category-title">{section.title}</h3>
+
+      <div class="tools-grid" id={section.id}>
+        {section.tools.map((tool) => (
+          <a href={tool.href} class="tool-card" aria-label={`Open ${tool.name}`}>
+            <div class="tool-card-head">
+              <span class="tool-icon" aria-hidden="true">
+                <i data-bx={boxIconByToolIcon[tool.icon]} data-bx-size="sm" aria-hidden="true"></i>
+              </span>
+              <h4>{tool.name}</h4>
+            </div>
+            <p>{tool.description}</p>
+            {/* <span class="load-badge">Loads in &lt; 10kb</span> */}
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+</section>
+
+<style>
+  .tools-section {
+    display: grid;
+    gap: var(--space-md);
+    padding-top: 0.35rem;
+  }
+
+  .tools-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-sm);
+  }
+
+  .tools-head h2 {
+    font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  }
+
+  .tools-head p {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .tool-category {
+    display: grid;
+    gap: 0.82rem;
+  }
+
+  .category-title {
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .tool-card {
+    position: relative;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    padding: 1rem;
+    display: grid;
+    gap: 0.55rem;
+    color: inherit;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    overflow: hidden;
+  }
+
+  .tool-card:hover,
+  .tool-card:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border-default));
+    box-shadow: var(--shadow-md);
+  }
+
+  .tool-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    padding-right: 6.5rem;
+  }
+
+  .tool-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    flex-shrink: 0;
+  }
+
+  :global(.tool-icon svg) {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .tool-card h4 {
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .tool-card p {
+    font-size: 0.92rem;
+    line-height: 1.42;
+  }
+
+  .tool-cta {
+    margin-top: auto;
+    color: var(--accent);
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
+
+  .load-badge {
+    position: absolute;
+    top: 0.72rem;
+    right: 0.72rem;
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    color: var(--accent);
+    padding: 0.22rem 0.48rem;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    pointer-events: none;
+  }
+
+  .tool-card:hover .load-badge,
+  .tool-card:focus-visible .load-badge {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 1080px) {
+    .tools-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

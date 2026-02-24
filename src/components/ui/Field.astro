@@ -1,0 +1,30 @@
+---
+interface Props {
+  label?: string;
+  htmlFor?: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  class?: string;
+}
+
+const {
+  label,
+  htmlFor,
+  hint,
+  error,
+  required = false,
+  class: className = ''
+} = Astro.props;
+---
+
+<div class={`ui-field ${className}`.trim()}>
+  {label && (
+    <label class="ui-label" for={htmlFor}>
+      {label}
+      {required && <span aria-hidden="true"> *</span>}
+    </label>
+  )}
+  <slot />
+  {error ? <p class="ui-error">{error}</p> : hint && <p class="ui-help">{hint}</p>}
+</div>

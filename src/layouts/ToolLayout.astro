@@ -1,0 +1,59 @@
+---
+import AppShell from './AppShell.astro';
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<AppShell title={title}>
+  <main class="ui-page tool-content">
+    <div class="tool-heading">
+      <h1 class="gradient-text">{title}</h1>
+      <div class="tool-heading__aside">
+        <slot name="titleAside" />
+      </div>
+    </div>
+    <div class="tool-slot">
+      <slot />
+    </div>
+  </main>
+</AppShell>
+
+<style>
+  .tool-content {
+    padding-top: var(--space-3xl);
+    padding-bottom: var(--space-4xl);
+    max-width: min(100%, var(--reading-max-width));
+    margin-inline: auto;
+    overflow-x: clip;
+  }
+
+  .tool-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 34rem);
+    gap: var(--space-lg);
+    align-items: start;
+    margin-bottom: var(--space-lg);
+  }
+
+  .tool-heading__aside:empty {
+    display: none;
+  }
+
+  .tool-content h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+    margin: 0;
+  }
+
+  .tool-slot {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  @media (max-width: 980px) {
+    .tool-heading {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

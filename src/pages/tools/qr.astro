@@ -1,0 +1,309 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+---
+
+<ToolLayout title="QR Generator">
+  <section class="qr-page">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Payload</h2>
+          <p class="ui-card__description">Text, URL, or any short string to encode.</p>
+        </div>
+        <Badge tone="neutral">Client-side</Badge>
+      </div>
+
+      <Field label="Input" htmlFor="qr-input" hint="Nothing leaves your browser.">
+        <Input id="qr-input" type="text" placeholder="https://example.dev/tool" />
+      </Field>
+
+      <div class="actions ui-cluster">
+        <Button id="qr-btn" variant="primary">Generate QR</Button>
+        <Button id="qr-clear" variant="ghost">Clear</Button>
+      </div>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Output</h2>
+          <p class="ui-card__description">SVG preview ready for copy or download.</p>
+        </div>
+        <div class="download-menu" id="qr-download-menu">
+          <button class="ui-button ui-button--secondary ui-button--sm" id="qr-download-toggle" type="button" aria-haspopup="menu" aria-expanded="false">
+            Download
+            <span aria-hidden="true">▾</span>
+          </button>
+          <div class="download-menu__panel" id="qr-download-panel" role="menu" aria-label="Download QR code">
+            <button type="button" class="download-menu__item" data-download-format="svg" role="menuitem">SVG</button>
+            <button type="button" class="download-menu__item" data-download-format="png" role="menuitem">PNG</button>
+            <button type="button" class="download-menu__item" data-download-format="jpeg" role="menuitem">JPEG</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="qr-output" class="qr-output" aria-live="polite">
+        <p class="placeholder">Result will appear here</p>
+      </div>
+    </Card>
+  </section>
+</ToolLayout>
+
+<style>
+  .qr-page {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .actions {
+    margin-top: var(--space-lg);
+  }
+
+  .qr-output {
+    min-height: 280px;
+    display: grid;
+    place-items: center;
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    padding: var(--space-lg);
+  }
+
+  .placeholder {
+    color: var(--text-tertiary);
+  }
+
+  .qr-output :global(svg) {
+    width: min(280px, 100%);
+    height: auto;
+  }
+
+  .download-menu {
+    position: relative;
+  }
+
+  .download-menu__panel {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    min-width: 8rem;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-surface) 96%, transparent);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+    z-index: 5;
+  }
+
+  .download-menu.is-open .download-menu__panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .download-menu__item {
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .download-menu__item:hover,
+  .download-menu__item:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+    outline: none;
+  }
+</style>
+
+<script>
+  const btn = document.getElementById('qr-btn');
+  const clearBtn = document.getElementById('qr-clear');
+  const input = document.getElementById('qr-input') as HTMLInputElement | null;
+  const output = document.getElementById('qr-output');
+  const downloadMenu = document.getElementById('qr-download-menu');
+  const downloadToggle = document.getElementById('qr-download-toggle') as HTMLButtonElement | null;
+  const downloadPanel = document.getElementById('qr-download-panel');
+  let latestQrSvg = '';
+  let qrRequestToken = 0;
+
+  const setMessage = (message: string) => {
+    if (!output) return;
+    latestQrSvg = '';
+    output.innerHTML = `<p class="placeholder">${message}</p>`;
+  };
+
+  const setDownloadOpen = (isOpen: boolean) => {
+    if (!downloadMenu || !downloadToggle) return;
+    downloadMenu.classList.toggle('is-open', isOpen);
+    downloadToggle.setAttribute('aria-expanded', String(isOpen));
+  };
+
+  const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  const getFilenameBase = () => {
+    const value = input?.value?.trim() || 'qr-code';
+    return value
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'qr-code';
+  };
+
+  const renderSvgToCanvas = async (svgText: string, type: 'png' | 'jpeg') => {
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    try {
+      const img = new Image();
+      img.decoding = 'async';
+      const load = new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load QR SVG for export.'));
+      });
+      img.src = url;
+      await load;
+
+      const width = img.naturalWidth || 320;
+      const height = img.naturalHeight || 320;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas export is not supported in this browser.');
+
+      if (type === 'jpeg') {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+      } else {
+        ctx.clearRect(0, 0, width, height);
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const mime = type === 'png' ? 'image/png' : 'image/jpeg';
+      const quality = type === 'jpeg' ? 0.95 : undefined;
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mime, quality));
+      if (!blob) throw new Error(`Failed to export QR as ${type.toUpperCase()}.`);
+      return blob;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const downloadQr = async (format: 'svg' | 'png' | 'jpeg') => {
+    if (!latestQrSvg) {
+      setMessage('Generate a QR code before downloading.');
+      return;
+    }
+
+    const fileBase = getFilenameBase();
+
+    if (format === 'svg') {
+      triggerBlobDownload(new Blob([latestQrSvg], { type: 'image/svg+xml;charset=utf-8' }), `${fileBase}.svg`);
+      return;
+    }
+
+    const blob = await renderSvgToCanvas(latestQrSvg, format);
+    triggerBlobDownload(blob, `${fileBase}.${format === 'jpeg' ? 'jpg' : 'png'}`);
+  };
+
+  const generate = async () => {
+    const value = input?.value?.trim();
+    if (!value) {
+      setMessage('Enter a value to generate a QR code.');
+      input?.focus();
+      return;
+    }
+
+    const requestToken = ++qrRequestToken;
+    setMessage('Generating...');
+
+    const { generateQR } = await import('../../tools/qr/logic');
+
+    try {
+      const svg = await generateQR(value);
+      if (requestToken !== qrRequestToken) return;
+      latestQrSvg = svg;
+      if (output) output.innerHTML = svg;
+    } catch (error) {
+      if (requestToken !== qrRequestToken) return;
+      setMessage(error instanceof Error ? error.message : 'Could not generate QR for this input.');
+    }
+  };
+
+  btn?.addEventListener('click', generate);
+
+  clearBtn?.addEventListener('click', () => {
+    qrRequestToken += 1;
+    if (input) input.value = '';
+    setMessage('Result will appear here');
+    setDownloadOpen(false);
+    input?.focus();
+  });
+
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      generate();
+    }
+  });
+
+  downloadToggle?.addEventListener('click', () => {
+    const next = !downloadMenu?.classList.contains('is-open');
+    setDownloadOpen(Boolean(next));
+  });
+
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    if (downloadMenu?.contains(target)) return;
+    setDownloadOpen(false);
+  });
+
+  downloadPanel?.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest<HTMLButtonElement>('[data-download-format]');
+    if (!button) return;
+
+    const format = button.dataset.downloadFormat as 'svg' | 'png' | 'jpeg' | undefined;
+    if (!format) return;
+
+    try {
+      await downloadQr(format);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Download failed.');
+    } finally {
+      setDownloadOpen(false);
+    }
+  });
+</script>
