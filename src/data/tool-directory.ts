@@ -46,6 +46,13 @@ export const toolSections: ToolSection[] = [
         description: 'Compress images, target output size, and read or strip EXIF metadata.',
         tags: ['image', 'optimize', 'compress', 'exif', 'metadata'],
         icon: 'crop'
+      },
+      {
+        name: 'Image Editor Basics',
+        href: '/tools/image-editor',
+        description: 'Crop, rotate, flip, resize, and convert common image formats.',
+        tags: ['image', 'crop', 'rotate', 'flip', 'resize', 'convert', 'avif', 'webp'],
+        icon: 'crop'
       }
     ]
   },
