@@ -32,7 +32,8 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
   crop: 'crop',
   svg: 'image-sparkle',
   data: 'database',
-  lock: 'lock'
+  lock: 'lock',
+  clock: 'clock'
 };
 ---
 <!doctype html>
@@ -263,7 +264,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       };
     </script>
     <script>
-      import { getIcons, Moon, Sun, Github, Lock, Bolt, MobileAlt, QrScan, Crop, Database, Grid, ImageSparkle } from '@boxicons/js';
+      import { getIcons, Moon, Sun, Github, Lock, Bolt, MobileAlt, QrScan, Crop, Database, Grid, ImageSparkle, Clock } from '@boxicons/js';
       import { configureFeatureFlags, primeFeatureFlags } from '../lib/feature-flags';
 
       const mountIcons = () => {
@@ -279,7 +280,8 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
             Crop,
             Database,
             Grid,
-            ImageSparkle
+            ImageSparkle,
+            Clock
           }
         });
       };

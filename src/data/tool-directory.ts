@@ -1,4 +1,4 @@
-export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'time';
+export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'clock';
 
 export interface ToolEntry {
   name: string;
@@ -65,7 +65,7 @@ export const toolSections: ToolSection[] = [
         href: '/tools/epoch',
         description: 'Convert epoch timestamps and ISO date/time values across precisions.',
         tags: ['epoch', 'timestamp', 'unix', 'timezone', 'date'],
-        icon: 'time'
+        icon: 'clock'
       },
       {
         name: 'Data Utilities',
