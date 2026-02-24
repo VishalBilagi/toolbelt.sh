@@ -1,0 +1,314 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Data Utilities">
+  <section class="tool-grid">
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">JSON Formatter & Validator</h2>
+            <p class="ui-card__description">Prettify JSON with configurable indentation and validate parse errors instantly.</p>
+          </div>
+        </div>
+
+        <div class="pane-grid">
+          <Field label="Input JSON" htmlFor="json-input">
+            <Textarea id="json-input" placeholder='{"name":"Alice"}' />
+          </Field>
+          <Field label="Formatted Output" htmlFor="json-output">
+            <Textarea id="json-output" readonly placeholder="Formatted JSON appears here." />
+          </Field>
+        </div>
+
+        <div class="controls">
+          <Field label="Indent spaces" htmlFor="json-indent">
+            <Input id="json-indent" type="number" min="2" max="8" value="2" />
+          </Field>
+        </div>
+
+        <div class="actions">
+          <Button id="json-format" variant="primary">Format JSON</Button>
+          <Button id="json-validate" variant="secondary">Validate JSON</Button>
+          <Button id="json-copy" variant="ghost">Copy output</Button>
+          <Button id="json-download" variant="ghost">Download output</Button>
+        </div>
+
+        <p id="json-status" class="status" aria-live="polite">Ready.</p>
+      </Card>
+
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">JSON Diff Viewer</h2>
+            <p class="ui-card__description">Compare two JSON documents and inspect exact field-level differences.</p>
+          </div>
+        </div>
+
+        <div class="pane-grid">
+          <Field label="Left JSON" htmlFor="diff-left">
+            <Textarea id="diff-left" placeholder='{"id":1,"name":"Alice"}' />
+          </Field>
+          <Field label="Right JSON" htmlFor="diff-right">
+            <Textarea id="diff-right" placeholder='{"id":1,"name":"Alicia"}' />
+          </Field>
+        </div>
+
+        <div class="actions">
+          <Button id="diff-run" variant="primary">Compare JSON</Button>
+          <Button id="diff-copy" variant="ghost">Copy diff report</Button>
+        </div>
+
+        <pre id="diff-output" class="output" aria-live="polite">Diff results appear here.</pre>
+      </Card>
+    </div>
+
+    <div class="tool-column">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">CSV ↔ JSON Converter</h2>
+            <p class="ui-card__description">Convert between CSV and JSON with delimiter and header-row controls.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <Field label="Delimiter" htmlFor="csv-delimiter">
+            <Input id="csv-delimiter" type="text" maxlength="1" value="," />
+          </Field>
+          <Field label="Header row (CSV → JSON)" htmlFor="csv-header-row">
+            <label class="checkbox-line">
+              <input id="csv-header-row" type="checkbox" checked />
+              <span>First row is header</span>
+            </label>
+          </Field>
+          <Field label="Include header (JSON → CSV)" htmlFor="csv-include-header">
+            <label class="checkbox-line">
+              <input id="csv-include-header" type="checkbox" checked />
+              <span>Write CSV headers</span>
+            </label>
+          </Field>
+        </div>
+
+        <div class="pane-grid">
+          <Field label="Input" htmlFor="csv-json-input">
+            <Textarea id="csv-json-input" placeholder="Paste CSV or JSON here..." />
+          </Field>
+          <Field label="Output" htmlFor="csv-json-output">
+            <Textarea id="csv-json-output" readonly placeholder="Converted output appears here." />
+          </Field>
+        </div>
+
+        <div class="actions">
+          <Button id="csv-to-json" variant="primary">CSV → JSON</Button>
+          <Button id="json-to-csv" variant="secondary">JSON → CSV</Button>
+          <Button id="csv-copy" variant="ghost">Copy output</Button>
+          <Button id="csv-download" variant="ghost">Download output</Button>
+        </div>
+
+        <p id="csv-status" class="status" aria-live="polite">Ready.</p>
+      </Card>
+    </div>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 96rem) !important;
+    max-width: min(100%, 96rem) !important;
+  }
+
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tool-column {
+    display: grid;
+    gap: var(--space-xl);
+    align-content: start;
+  }
+
+  .pane-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .controls,
+  .row {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .status {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+  }
+
+  .output {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    min-height: 6rem;
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .checkbox-line {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    min-height: 2.6rem;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 1180px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  let logic: typeof import('../../tools/data-utils/logic') | null = null;
+  const getLogic = async () => {
+    if (!logic) logic = await import('../../tools/data-utils/logic');
+    return logic;
+  };
+
+  const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+  const copyText = async (value: string) => {
+    if (!value.trim()) return;
+    await navigator.clipboard.writeText(value);
+  };
+
+  const downloadText = (filename: string, value: string) => {
+    if (!value.trim()) return;
+    const blob = new Blob([value], { type: 'text/plain;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(href);
+  };
+
+  const jsonInput = byId<HTMLTextAreaElement>('json-input');
+  const jsonOutput = byId<HTMLTextAreaElement>('json-output');
+  const jsonIndent = byId<HTMLInputElement>('json-indent');
+  const jsonStatus = byId<HTMLElement>('json-status');
+
+  document.getElementById('json-format')?.addEventListener('click', async () => {
+    try {
+      const indent = Number.parseInt(jsonIndent?.value ?? '2', 10);
+      const { formatJson } = await getLogic();
+      const formatted = formatJson(jsonInput?.value ?? '', Number.isNaN(indent) ? 2 : indent);
+      if (jsonOutput) jsonOutput.value = formatted;
+      if (jsonStatus) jsonStatus.textContent = 'JSON formatted successfully.';
+    } catch (error) {
+      if (jsonStatus) jsonStatus.textContent = error instanceof Error ? error.message : 'Unable to format JSON.';
+    }
+  });
+
+  document.getElementById('json-validate')?.addEventListener('click', async () => {
+    const { validateJson } = await getLogic();
+    const result = validateJson(jsonInput?.value ?? '');
+    if (jsonStatus) {
+      jsonStatus.textContent = result.valid ? 'JSON is valid.' : result.error ?? 'Invalid JSON.';
+    }
+  });
+
+  document.getElementById('json-copy')?.addEventListener('click', async () => {
+    await copyText(jsonOutput?.value ?? '');
+  });
+
+  document.getElementById('json-download')?.addEventListener('click', () => {
+    downloadText('formatted.json', jsonOutput?.value ?? '');
+  });
+
+  const diffLeft = byId<HTMLTextAreaElement>('diff-left');
+  const diffRight = byId<HTMLTextAreaElement>('diff-right');
+  const diffOutput = byId<HTMLElement>('diff-output');
+
+  document.getElementById('diff-run')?.addEventListener('click', async () => {
+    try {
+      const { diffJson } = await getLogic();
+      const diffs = diffJson(diffLeft?.value ?? '', diffRight?.value ?? '');
+      if (!diffOutput) return;
+      if (diffs.length === 0) {
+        diffOutput.textContent = 'No differences found.';
+        return;
+      }
+
+      diffOutput.textContent = diffs
+        .map((diff) => `${diff.type.toUpperCase()} ${diff.path}\n  left: ${JSON.stringify(diff.left)}\n  right: ${JSON.stringify(diff.right)}`)
+        .join('\n\n');
+    } catch (error) {
+      if (diffOutput) diffOutput.textContent = error instanceof Error ? error.message : 'Unable to diff JSON.';
+    }
+  });
+
+  document.getElementById('diff-copy')?.addEventListener('click', async () => {
+    await copyText(diffOutput?.textContent ?? '');
+  });
+
+  const csvInput = byId<HTMLTextAreaElement>('csv-json-input');
+  const csvOutput = byId<HTMLTextAreaElement>('csv-json-output');
+  const csvStatus = byId<HTMLElement>('csv-status');
+  const delimiterInput = byId<HTMLInputElement>('csv-delimiter');
+  const headerRow = byId<HTMLInputElement>('csv-header-row');
+  const includeHeader = byId<HTMLInputElement>('csv-include-header');
+
+  document.getElementById('csv-to-json')?.addEventListener('click', async () => {
+    try {
+      const { csvToJson } = await getLogic();
+      const output = csvToJson(csvInput?.value ?? '', {
+        delimiter: delimiterInput?.value || ',',
+        headerRow: Boolean(headerRow?.checked)
+      });
+      if (csvOutput) csvOutput.value = output;
+      if (csvStatus) csvStatus.textContent = 'CSV converted to JSON.';
+    } catch (error) {
+      if (csvStatus) csvStatus.textContent = error instanceof Error ? error.message : 'Unable to convert CSV to JSON.';
+    }
+  });
+
+  document.getElementById('json-to-csv')?.addEventListener('click', async () => {
+    try {
+      const { jsonToCsv } = await getLogic();
+      const output = jsonToCsv(csvInput?.value ?? '', delimiterInput?.value || ',', Boolean(includeHeader?.checked));
+      if (csvOutput) csvOutput.value = output;
+      if (csvStatus) csvStatus.textContent = 'JSON converted to CSV.';
+    } catch (error) {
+      if (csvStatus) csvStatus.textContent = error instanceof Error ? error.message : 'Unable to convert JSON to CSV.';
+    }
+  });
+
+  document.getElementById('csv-copy')?.addEventListener('click', async () => {
+    await copyText(csvOutput?.value ?? '');
+  });
+
+  document.getElementById('csv-download')?.addEventListener('click', () => {
+    downloadText('data-output.txt', csvOutput?.value ?? '');
+  });
+</script>
