@@ -54,6 +54,13 @@ export const toolSections: ToolSection[] = [
         icon: 'data'
       },
       {
+        name: 'Data Utilities',
+        href: '/tools/data-utils',
+        description: 'JSON format/validate/diff and CSV ↔ JSON conversion in one workspace.',
+        tags: ['json', 'csv', 'diff', 'validate', 'formatter'],
+        icon: 'data'
+      },
+      {
         name: 'Crypto Utilities',
         href: '/tools/crypto',
         description: 'SHA/MD5 hashing, HMAC signing, and UUID generation.',
