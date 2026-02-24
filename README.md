@@ -1,4 +1,4 @@
-# [toolbelt.sh](toolbelt.sh)
+# [toolbelt.sh](https://toolbelt.sh)
 
 A collection of small web tools for everyday developer and creator tasks.
 

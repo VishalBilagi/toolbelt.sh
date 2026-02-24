@@ -9,7 +9,7 @@ const { title } = Astro.props;
 const pathname = Astro.url.pathname;
 const isHomeRoute = pathname === '/' || pathname === '/index.html';
 const disableScrollReveal = pathname.startsWith('/tools/') && pathname !== '/tools' && pathname !== '/tools/';
-const githubUrl = 'https://github.com';
+const githubUrl = 'https://github.com/VishalBilagi/toolbelt.sh';
 const ldClientId = `${import.meta.env.LD_CLIENT_ID ?? ''}`.trim();
 
 const coreNavItems = [
