@@ -133,6 +133,7 @@ Notes:
 
 - Make the smallest safe change that solves the request.
 - Preserve existing architecture and naming unless asked to refactor.
+- Home page footer tool links are generated from `src/data/tool-directory.ts`; add/update tool entries there so the footer stays in sync automatically.
 - Run relevant tests for changed logic.
 - Run `bun run build` before finalizing substantial UI/route changes.
 - Do not commit or push unless explicitly asked.

@@ -2,8 +2,10 @@
 import AppShell from '../layouts/AppShell.astro';
 import Button from '../components/ui/Button.astro';
 import ToolDirectory from '../components/ToolDirectory.astro';
+import { toolSections } from '../data/tool-directory';
 
 const year = new Date().getFullYear();
+const footerTools = toolSections.flatMap((section) => section.tools);
 ---
 
 <AppShell title="toolbelt.sh">
@@ -60,11 +62,9 @@ const year = new Date().getFullYear();
 
     <footer class="site-footer" aria-label="Footer">
       <nav class="footer-links" aria-label="Tool links">
-        <a href="/tools/qr">QR Generator</a>
-        <a href="/tools/color-picker">Color Picker</a>
-        <a href="/tools/svg-resize">SVG Resizer</a>
-        <a href="/tools/encoding-token">Encoding & Token</a>
-        <a href="/tools/crypto">Crypto Utilities</a>
+        {footerTools.map((tool) => (
+          <a href={tool.href}>{tool.name}</a>
+        ))}
       </nav>
 
       <p class="footer-copy">toolbelt.sh by Vishal Bilagi with Codex</p>
