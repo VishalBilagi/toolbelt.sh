@@ -39,6 +39,13 @@ export const toolSections: ToolSection[] = [
         description: 'Scale and fix SVG dimensions without quality loss.',
         tags: ['svg', 'vector', 'resize'],
         icon: 'svg'
+      },
+      {
+        name: 'Image Optimization + EXIF Tools',
+        href: '/tools/image-optimizer',
+        description: 'Compress images, target output size, and read or strip EXIF metadata.',
+        tags: ['image', 'optimize', 'compress', 'exif', 'metadata'],
+        icon: 'crop'
       }
     ]
   },
@@ -59,6 +66,13 @@ export const toolSections: ToolSection[] = [
         description: 'Convert epoch timestamps and ISO date/time values across precisions.',
         tags: ['epoch', 'timestamp', 'unix', 'timezone', 'date'],
         icon: 'time'
+      },
+      {
+        name: 'Data Utilities',
+        href: '/tools/data-utils',
+        description: 'JSON format/validate/diff and CSV ↔ JSON conversion in one workspace.',
+        tags: ['json', 'csv', 'diff', 'validate', 'formatter'],
+        icon: 'data'
       },
       {
         name: 'Crypto Utilities',
