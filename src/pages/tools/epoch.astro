@@ -115,9 +115,16 @@ import Select from '../../components/ui/Select.astro';
 </ToolLayout>
 
 <style>
+  :global(main.tool-content) {
+    width: min(100%, 92rem) !important;
+    max-width: min(100%, 92rem) !important;
+  }
+
   .tool-grid {
     display: grid;
     gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
   }
 
   .row {
@@ -171,6 +178,12 @@ import Select from '../../components/ui/Select.astro';
     margin-top: var(--space-sm);
     color: var(--state-danger);
     min-height: 1.25rem;
+  }
+
+  @media (max-width: 1180px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 
