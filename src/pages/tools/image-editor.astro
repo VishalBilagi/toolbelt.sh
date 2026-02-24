@@ -1,0 +1,920 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+---
+
+<ToolLayout title="Image Editor Basics">
+  <section class="tool-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Live Preview & Crop</h2>
+          <p class="ui-card__description">Drag on the image to draw a crop area, then rotate, flip, resize, and export.</p>
+        </div>
+        <Badge tone="neutral">Client-side</Badge>
+      </div>
+
+      <Field label="Image file" htmlFor="image-file" hint="PNG, JPG, WEBP, AVIF, and GIF are supported as input when the browser can decode them.">
+        <Input id="image-file" type="file" accept="image/*" />
+      </Field>
+
+      <div class="preview-grid">
+        <section>
+          <div class="preview-heading">
+            <h3>Original (Draw crop on image)</h3>
+            <p id="before-meta" class="meta-text">-</p>
+          </div>
+          <div id="crop-stage" class="crop-stage" aria-label="Crop preview. Drag on the image to draw a crop selection.">
+            <canvas id="before-canvas"></canvas>
+            <div id="crop-mask-top" class="crop-mask" hidden></div>
+            <div id="crop-mask-left" class="crop-mask" hidden></div>
+            <div id="crop-mask-right" class="crop-mask" hidden></div>
+            <div id="crop-mask-bottom" class="crop-mask" hidden></div>
+            <div id="crop-overlay" class="crop-overlay" hidden>
+              <span class="crop-label">Crop</span>
+              <button id="crop-resize-handle" class="crop-handle" type="button" aria-label="Resize crop selection"></button>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="preview-heading">
+            <h3>Edited output</h3>
+            <p id="after-meta" class="meta-text">-</p>
+          </div>
+          <canvas id="after-canvas"></canvas>
+        </section>
+      </div>
+
+      <p class="meta-text">Tip: Drag on the image to create a crop selection. Drag the crop box to move it, use the handle to resize, or fine tune values below.</p>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Edit & Export Controls</h2>
+          <p class="ui-card__description">Fine tune crop values (optional), transformations, and output format.</p>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-heading section-heading--split">
+          <h3>Fine tune crop (optional)</h3>
+          <Button id="reset-crop" variant="ghost" size="sm">Reset Crop</Button>
+        </div>
+        <div class="field-grid two-col">
+          <Field label="X" htmlFor="crop-x"><Input id="crop-x" type="number" min="0" step="1" value="0" /></Field>
+          <Field label="Y" htmlFor="crop-y"><Input id="crop-y" type="number" min="0" step="1" value="0" /></Field>
+          <Field label="Width" htmlFor="crop-width"><Input id="crop-width" type="number" min="1" step="1" value="1" /></Field>
+          <Field label="Height" htmlFor="crop-height"><Input id="crop-height" type="number" min="1" step="1" value="1" /></Field>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-heading"><h3>Transform</h3></div>
+        <div class="transform-row">
+          <Button id="rotate-left" variant="ghost" size="sm">Rotate -90°</Button>
+          <Button id="rotate-right" variant="ghost" size="sm">Rotate +90°</Button>
+          <Button id="flip-h" variant="ghost" size="sm">Flip Horizontal</Button>
+          <Button id="flip-v" variant="ghost" size="sm">Flip Vertical</Button>
+          <Button id="reset-all" variant="secondary" size="sm">Reset</Button>
+        </div>
+        <p id="transform-summary" class="meta-text">Rotation: 0° · Flip H: off · Flip V: off</p>
+      </div>
+
+      <div class="section-block">
+        <div class="section-heading"><h3>Resize & Format</h3></div>
+        <label class="inline-checkbox">
+          <input id="aspect-lock" type="checkbox" checked />
+          <span>Lock aspect ratio</span>
+        </label>
+
+        <div class="field-grid two-col">
+          <Field label="Output width (px)" htmlFor="output-width"><Input id="output-width" type="number" min="1" max="8192" step="1" value="1" /></Field>
+          <Field label="Output height (px)" htmlFor="output-height"><Input id="output-height" type="number" min="1" max="8192" step="1" value="1" /></Field>
+        </div>
+
+        <div class="field-grid two-col">
+          <Field label="Output format" htmlFor="format-select">
+            <Select id="format-select">
+              <option value="png">PNG</option>
+              <option value="jpeg">JPG</option>
+              <option value="webp">WebP</option>
+              <option value="avif">AVIF</option>
+            </Select>
+          </Field>
+          <Field label="Quality (JPG/WebP/AVIF)" htmlFor="quality-range">
+            <div class="slider-row">
+              <input id="quality-range" type="range" min="0.3" max="1" step="0.01" value="0.92" />
+              <p id="quality-label" class="slider-value">0.92</p>
+            </div>
+          </Field>
+        </div>
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <div class="actions">
+        <Button id="download-btn" variant="primary">Download Export</Button>
+        <Button href="/tools" variant="ghost" size="sm">Back to tools</Button>
+      </div>
+    </Card>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 112rem) !important;
+    max-width: min(100%, 112rem) !important;
+  }
+
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1.4fr) minmax(21rem, 1fr);
+    align-items: start;
+  }
+
+  .preview-grid {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-lg);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preview-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    align-items: baseline;
+  }
+
+  .crop-stage {
+    margin-top: var(--space-sm);
+    position: relative;
+    isolation: isolate;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    min-height: 320px;
+    display: grid;
+    place-items: center;
+  }
+
+  #before-canvas,
+  #after-canvas {
+    max-width: 100%;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    display: block;
+  }
+
+  #before-canvas {
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  #after-canvas {
+    margin-top: var(--space-sm);
+    width: 100%;
+    min-height: 320px;
+  }
+
+  .crop-overlay {
+    position: absolute;
+    z-index: 2;
+    border: 2px solid var(--accent-500);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-500) 35%, transparent);
+    cursor: move;
+    box-sizing: border-box;
+    touch-action: none;
+  }
+
+  .crop-mask {
+    position: absolute;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.58);
+    pointer-events: none;
+  }
+
+  .crop-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateY(-100%);
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    border: 1px solid var(--border-default);
+    border-bottom: none;
+    padding: 0.05rem 0.3rem;
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+    pointer-events: none;
+  }
+
+  .crop-handle {
+    position: absolute;
+    right: -11px;
+    bottom: -11px;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--accent-500);
+    background: var(--bg-surface);
+    border-radius: 50%;
+    cursor: nwse-resize;
+    touch-action: none;
+  }
+
+  .section-heading--split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .section-block {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-default);
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .section-heading p,
+  .meta-text,
+  .status {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+  }
+
+  .field-grid {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .field-grid.two-col {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .transform-row,
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .slider-row {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .slider-value {
+    min-width: 3.2rem;
+    text-align: right;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+  }
+
+  @media (max-width: 1080px) {
+    .tool-grid,
+    .preview-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #after-canvas,
+    .crop-stage {
+      min-height: 240px;
+    }
+  }
+</style>
+
+<script>
+  type ImageFormat = import('../../tools/image-editor/logic').ImageFormat;
+  type CropRect = import('../../tools/image-editor/logic').CropRect;
+
+  const fileInput = document.getElementById('image-file') as HTMLInputElement | null;
+  const beforeCanvas = document.getElementById('before-canvas') as HTMLCanvasElement | null;
+  const afterCanvas = document.getElementById('after-canvas') as HTMLCanvasElement | null;
+  const cropStage = document.getElementById('crop-stage');
+  const cropOverlay = document.getElementById('crop-overlay') as HTMLElement | null;
+  const cropResizeHandle = document.getElementById('crop-resize-handle');
+  const cropMaskTop = document.getElementById('crop-mask-top') as HTMLElement | null;
+  const cropMaskLeft = document.getElementById('crop-mask-left') as HTMLElement | null;
+  const cropMaskRight = document.getElementById('crop-mask-right') as HTMLElement | null;
+  const cropMaskBottom = document.getElementById('crop-mask-bottom') as HTMLElement | null;
+  const cropX = document.getElementById('crop-x') as HTMLInputElement | null;
+  const cropY = document.getElementById('crop-y') as HTMLInputElement | null;
+  const cropWidth = document.getElementById('crop-width') as HTMLInputElement | null;
+  const cropHeight = document.getElementById('crop-height') as HTMLInputElement | null;
+  const resetCropBtn = document.getElementById('reset-crop');
+  const outputWidth = document.getElementById('output-width') as HTMLInputElement | null;
+  const outputHeight = document.getElementById('output-height') as HTMLInputElement | null;
+  const aspectLock = document.getElementById('aspect-lock') as HTMLInputElement | null;
+  const qualityRange = document.getElementById('quality-range') as HTMLInputElement | null;
+  const qualityLabel = document.getElementById('quality-label');
+  const formatSelect = document.getElementById('format-select') as HTMLSelectElement | null;
+  const beforeMeta = document.getElementById('before-meta');
+  const afterMeta = document.getElementById('after-meta');
+  const statusText = document.getElementById('status');
+  const transformSummary = document.getElementById('transform-summary');
+
+  const rotateLeft = document.getElementById('rotate-left');
+  const rotateRight = document.getElementById('rotate-right');
+  const flipHBtn = document.getElementById('flip-h');
+  const flipVBtn = document.getElementById('flip-v');
+  const resetAllBtn = document.getElementById('reset-all');
+  const downloadBtn = document.getElementById('download-btn');
+
+  let imageEditorLogic: typeof import('../../tools/image-editor/logic') | null = null;
+  let sourceBitmap: ImageBitmap | null = null;
+  let state = { rotation: 0, flipH: false, flipV: false };
+  let formatSupport: Record<ImageFormat, boolean> = { png: true, jpeg: true, webp: false, avif: false };
+  let cropRect: CropRect = { x: 0, y: 0, width: 1, height: 1 };
+  let renderMetrics = { displayWidth: 1, displayHeight: 1, scaleX: 1, scaleY: 1 };
+
+  const getLogic = async () => {
+    if (!imageEditorLogic) imageEditorLogic = await import('../../tools/image-editor/logic');
+    return imageEditorLogic;
+  };
+
+  const updateTransformSummary = () => {
+    if (!transformSummary) return;
+    transformSummary.textContent = `Rotation: ${state.rotation}° · Flip H: ${state.flipH ? 'on' : 'off'} · Flip V: ${state.flipV ? 'on' : 'off'}`;
+  };
+
+  const parseIntSafe = (input: HTMLInputElement | null, fallback: number): number => {
+    const next = Number.parseInt(input?.value ?? '', 10);
+    return Number.isFinite(next) ? next : fallback;
+  };
+
+  const setStatus = (value: string) => {
+    if (statusText) statusText.textContent = value;
+  };
+
+  const detectFormatSupport = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+
+    const probe = (mime: string): boolean => {
+      try {
+        return canvas.toDataURL(mime).startsWith(`data:${mime}`);
+      } catch {
+        return false;
+      }
+    };
+
+    formatSupport = { png: true, jpeg: true, webp: probe('image/webp'), avif: probe('image/avif') };
+
+    if (formatSelect) {
+      Array.from(formatSelect.options).forEach((option) => {
+        const key = option.value as ImageFormat;
+        if (!formatSupport[key]) option.text = `${option.text} (fallback to PNG)`;
+      });
+    }
+  };
+
+  const drawContain = (canvas: HTMLCanvasElement, source: CanvasImageSource, width: number, height: number): { width: number; height: number } => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return { width: 1, height: 1 };
+
+    const maxWidth = 800;
+    const maxHeight = 460;
+    const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+    const displayWidth = Math.max(1, Math.round(width * ratio));
+    const displayHeight = Math.max(1, Math.round(height * ratio));
+
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+    ctx.drawImage(source, 0, 0, displayWidth, displayHeight);
+
+    return { width: displayWidth, height: displayHeight };
+  };
+
+  const syncCropInputs = () => {
+    if (cropX) cropX.value = String(cropRect.x);
+    if (cropY) cropY.value = String(cropRect.y);
+    if (cropWidth) cropWidth.value = String(cropRect.width);
+    if (cropHeight) cropHeight.value = String(cropRect.height);
+  };
+
+  const getClientToSourceScale = (): { x: number; y: number } => {
+    if (!beforeCanvas || !sourceBitmap) {
+      return { x: renderMetrics.scaleX, y: renderMetrics.scaleY };
+    }
+
+    const rect = beforeCanvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return { x: renderMetrics.scaleX, y: renderMetrics.scaleY };
+    }
+
+    return {
+      x: sourceBitmap.width / rect.width,
+      y: sourceBitmap.height / rect.height
+    };
+  };
+
+  const syncCropOverlay = () => {
+    if (!cropOverlay || !sourceBitmap) return;
+
+    const canvasOffsetLeft = beforeCanvas?.offsetLeft ?? 0;
+    const canvasOffsetTop = beforeCanvas?.offsetTop ?? 0;
+    const canvasDisplayWidth = beforeCanvas?.offsetWidth ?? renderMetrics.displayWidth;
+    const canvasDisplayHeight = beforeCanvas?.offsetHeight ?? renderMetrics.displayHeight;
+    const previewScale = getClientToSourceScale();
+
+    const left = Math.round(cropRect.x / previewScale.x);
+    const top = Math.round(cropRect.y / previewScale.y);
+    const width = Math.max(1, Math.round(cropRect.width / previewScale.x));
+    const height = Math.max(1, Math.round(cropRect.height / previewScale.y));
+    const isFullCrop =
+      cropRect.x === 0 &&
+      cropRect.y === 0 &&
+      cropRect.width === sourceBitmap.width &&
+      cropRect.height === sourceBitmap.height;
+
+    cropOverlay.style.left = `${canvasOffsetLeft + left}px`;
+    cropOverlay.style.top = `${canvasOffsetTop + top}px`;
+    cropOverlay.style.width = `${width}px`;
+    cropOverlay.style.height = `${height}px`;
+    cropOverlay.style.pointerEvents = isFullCrop ? 'none' : 'auto';
+    cropOverlay.hidden = false;
+
+    const syncMaskPanel = (
+      node: HTMLElement | null,
+      panelLeft: number,
+      panelTop: number,
+      panelWidth: number,
+      panelHeight: number
+    ) => {
+      if (!node) return;
+
+      const safeWidth = Math.max(0, Math.round(panelWidth));
+      const safeHeight = Math.max(0, Math.round(panelHeight));
+      node.style.left = `${Math.round(panelLeft)}px`;
+      node.style.top = `${Math.round(panelTop)}px`;
+      node.style.width = `${safeWidth}px`;
+      node.style.height = `${safeHeight}px`;
+      node.hidden = isFullCrop || safeWidth === 0 || safeHeight === 0;
+    };
+
+    syncMaskPanel(cropMaskTop, canvasOffsetLeft, canvasOffsetTop, canvasDisplayWidth, top);
+    syncMaskPanel(cropMaskLeft, canvasOffsetLeft, canvasOffsetTop + top, left, height);
+    syncMaskPanel(
+      cropMaskRight,
+      canvasOffsetLeft + left + width,
+      canvasOffsetTop + top,
+      Math.max(0, canvasDisplayWidth - (left + width)),
+      height
+    );
+    syncMaskPanel(
+      cropMaskBottom,
+      canvasOffsetLeft,
+      canvasOffsetTop + top + height,
+      canvasDisplayWidth,
+      Math.max(0, canvasDisplayHeight - (top + height))
+    );
+  };
+
+  const getSourcePointFromPreview = (
+    event: PointerEvent,
+    clampToBounds: boolean
+  ): { x: number; y: number } | null => {
+    if (!beforeCanvas || !sourceBitmap) return null;
+
+    const rect = beforeCanvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+
+    let localX = event.clientX - rect.left;
+    let localY = event.clientY - rect.top;
+
+    if (!clampToBounds && (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height)) {
+      return null;
+    }
+
+    localX = Math.max(0, Math.min(localX, rect.width));
+    localY = Math.max(0, Math.min(localY, rect.height));
+
+    return {
+      x: Math.round((localX / rect.width) * sourceBitmap.width),
+      y: Math.round((localY / rect.height) * sourceBitmap.height)
+    };
+  };
+
+  const buildCropRectFromPoints = (
+    start: { x: number; y: number },
+    end: { x: number; y: number }
+  ): CropRect => {
+    if (!sourceBitmap) return cropRect;
+
+    const maxWidth = sourceBitmap.width;
+    const maxHeight = sourceBitmap.height;
+
+    const left = Math.max(0, Math.min(start.x, end.x));
+    const top = Math.max(0, Math.min(start.y, end.y));
+    const right = Math.max(0, Math.min(maxWidth, Math.max(start.x, end.x)));
+    const bottom = Math.max(0, Math.min(maxHeight, Math.max(start.y, end.y)));
+    const width = Math.max(1, right - left);
+    const height = Math.max(1, bottom - top);
+
+    return {
+      x: Math.max(0, Math.min(left, maxWidth - width)),
+      y: Math.max(0, Math.min(top, maxHeight - height)),
+      width,
+      height
+    };
+  };
+
+  const renderEditedCanvas = async () => {
+    if (!sourceBitmap || !afterCanvas || !outputWidth || !outputHeight) return null;
+
+    const logic = await getLogic();
+    cropRect = logic.normalizeCropRect(cropRect, sourceBitmap.width, sourceBitmap.height);
+    syncCropInputs();
+
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = cropRect.width;
+    cropCanvas.height = cropRect.height;
+    const cropCtx = cropCanvas.getContext('2d');
+    if (!cropCtx) return null;
+
+    cropCtx.drawImage(sourceBitmap, cropRect.x, cropRect.y, cropRect.width, cropRect.height, 0, 0, cropRect.width, cropRect.height);
+
+    const rotateTurns = ((state.rotation / 90) % 4 + 4) % 4;
+    const rotatedWidth = rotateTurns % 2 === 0 ? cropRect.width : cropRect.height;
+    const rotatedHeight = rotateTurns % 2 === 0 ? cropRect.height : cropRect.width;
+
+    const transformCanvas = document.createElement('canvas');
+    transformCanvas.width = rotatedWidth;
+    transformCanvas.height = rotatedHeight;
+    const transformCtx = transformCanvas.getContext('2d');
+    if (!transformCtx) return null;
+
+    transformCtx.translate(rotatedWidth / 2, rotatedHeight / 2);
+    transformCtx.rotate((state.rotation * Math.PI) / 180);
+    transformCtx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+    transformCtx.drawImage(cropCanvas, -cropRect.width / 2, -cropRect.height / 2);
+
+    const transformedAspectRatio = rotatedWidth / rotatedHeight;
+    const safeOutputWidth = logic.clampDimension(parseIntSafe(outputWidth, rotatedWidth), 8192);
+    const safeOutputHeight = logic.clampDimension(parseIntSafe(outputHeight, rotatedHeight), 8192);
+
+    let finalWidth = safeOutputWidth;
+    let finalHeight = safeOutputHeight;
+
+    if (aspectLock?.checked) {
+      finalHeight = logic.deriveLockedHeight(finalWidth, transformedAspectRatio, 8192);
+      outputHeight.value = String(finalHeight);
+    }
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = finalWidth;
+    finalCanvas.height = finalHeight;
+    const finalCtx = finalCanvas.getContext('2d');
+    if (!finalCtx) return null;
+
+    finalCtx.drawImage(transformCanvas, 0, 0, finalWidth, finalHeight);
+    drawContain(afterCanvas, finalCanvas, finalWidth, finalHeight);
+    if (afterMeta) afterMeta.textContent = `Output: ${finalWidth}x${finalHeight}px`;
+
+    return { canvas: finalCanvas, width: finalWidth, height: finalHeight };
+  };
+
+  const resetForImage = async () => {
+    if (!sourceBitmap || !outputWidth || !outputHeight || !beforeCanvas) return;
+
+    state = { rotation: 0, flipH: false, flipV: false };
+    cropRect = {
+      x: 0,
+      y: 0,
+      width: sourceBitmap.width,
+      height: sourceBitmap.height
+    };
+
+    const beforeSize = drawContain(beforeCanvas, sourceBitmap, sourceBitmap.width, sourceBitmap.height);
+    renderMetrics = {
+      displayWidth: beforeSize.width,
+      displayHeight: beforeSize.height,
+      scaleX: sourceBitmap.width / beforeSize.width,
+      scaleY: sourceBitmap.height / beforeSize.height
+    };
+
+    outputWidth.value = String(sourceBitmap.width);
+    outputHeight.value = String(sourceBitmap.height);
+
+    syncCropInputs();
+    syncCropOverlay();
+    updateTransformSummary();
+    await renderEditedCanvas();
+  };
+
+  const rerender = async () => {
+    if (!sourceBitmap) return;
+    syncCropOverlay();
+    await renderEditedCanvas();
+  };
+
+  const applyCropFromInputs = async () => {
+    if (!sourceBitmap) return;
+    const logic = await getLogic();
+
+    cropRect = logic.normalizeCropRect(
+      {
+        x: parseIntSafe(cropX, 0),
+        y: parseIntSafe(cropY, 0),
+        width: parseIntSafe(cropWidth, sourceBitmap.width),
+        height: parseIntSafe(cropHeight, sourceBitmap.height)
+      },
+      sourceBitmap.width,
+      sourceBitmap.height
+    );
+
+    await rerender();
+  };
+
+  fileInput?.addEventListener('change', async (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    try {
+      sourceBitmap?.close();
+      sourceBitmap = await createImageBitmap(file);
+      await resetForImage();
+      if (beforeMeta) beforeMeta.textContent = `Source: ${sourceBitmap.width}x${sourceBitmap.height}px`;
+      setStatus('Image loaded. Drag on the preview image to draw a crop selection.');
+    } catch (error) {
+      sourceBitmap = null;
+      if (cropOverlay) cropOverlay.hidden = true;
+      [cropMaskTop, cropMaskLeft, cropMaskRight, cropMaskBottom].forEach((node) => {
+        if (node) node.hidden = true;
+      });
+      setStatus(`Could not read image: ${(error as Error).message}`);
+    }
+  });
+
+  [cropX, cropY, cropWidth, cropHeight].forEach((input) => {
+    input?.addEventListener('input', applyCropFromInputs);
+  });
+
+  [outputWidth, outputHeight, aspectLock, qualityRange, formatSelect].forEach((input) => {
+    input?.addEventListener('input', async (event) => {
+      if (!sourceBitmap) return;
+      const logic = await getLogic();
+
+      if (event.target === qualityRange && qualityLabel && qualityRange) {
+        qualityLabel.textContent = Number.parseFloat(qualityRange.value).toFixed(2);
+      }
+
+      if (aspectLock?.checked && event.target === outputWidth && outputWidth && outputHeight) {
+        const width = Number.parseInt(outputWidth.value, 10);
+        const height = logic.deriveLockedHeight(width, cropRect.width / cropRect.height, 8192);
+        outputHeight.value = String(height);
+      }
+
+      if (aspectLock?.checked && event.target === outputHeight && outputHeight && outputWidth) {
+        const height = Number.parseInt(outputHeight.value, 10);
+        const width = logic.deriveLockedWidth(height, cropRect.width / cropRect.height, 8192);
+        outputWidth.value = String(width);
+      }
+
+      await rerender();
+    });
+  });
+
+  beforeCanvas?.addEventListener('pointerdown', (event) => {
+    if (!sourceBitmap) return;
+    if (event.button !== 0) return;
+
+    const startPoint = getSourcePointFromPreview(event, false);
+    if (!startPoint) return;
+
+    event.preventDefault();
+
+    const activePointerId = event.pointerId;
+    const startRect = { ...cropRect };
+    let changed = false;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== activePointerId) return;
+
+      const currentPoint = getSourcePointFromPreview(moveEvent, true);
+      if (!currentPoint) return;
+
+      const nextRect = buildCropRectFromPoints(startPoint, currentPoint);
+      if (
+        nextRect.x !== startRect.x ||
+        nextRect.y !== startRect.y ||
+        nextRect.width !== startRect.width ||
+        nextRect.height !== startRect.height
+      ) {
+        changed = true;
+      }
+
+      cropRect = nextRect;
+      syncCropInputs();
+      syncCropOverlay();
+    };
+
+    const onEnd = async (endEvent: PointerEvent) => {
+      if (endEvent.pointerId !== activePointerId) return;
+
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+
+      if (!changed) {
+        cropRect = startRect;
+        syncCropInputs();
+        syncCropOverlay();
+        return;
+      }
+
+      await renderEditedCanvas();
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+  });
+
+  const attachPointerDrag = (target: HTMLElement | null, mode: 'move' | 'resize') => {
+    target?.addEventListener('pointerdown', async (event) => {
+      if (!sourceBitmap || !cropOverlay) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const logic = await getLogic();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startRect = { ...cropRect };
+      const previewScale = getClientToSourceScale();
+
+      const onMove = (moveEvent: PointerEvent) => {
+        const deltaX = Math.round((moveEvent.clientX - startX) * previewScale.x);
+        const deltaY = Math.round((moveEvent.clientY - startY) * previewScale.y);
+
+        if (mode === 'move') {
+          cropRect = logic.normalizeCropRect(
+            {
+              ...startRect,
+              x: startRect.x + deltaX,
+              y: startRect.y + deltaY
+            },
+            sourceBitmap.width,
+            sourceBitmap.height
+          );
+        } else {
+          cropRect = logic.normalizeCropRect(
+            {
+              ...startRect,
+              width: startRect.width + deltaX,
+              height: startRect.height + deltaY
+            },
+            sourceBitmap.width,
+            sourceBitmap.height
+          );
+        }
+
+        syncCropInputs();
+        syncCropOverlay();
+      };
+
+      const onUp = async () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        await renderEditedCanvas();
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  };
+
+  attachPointerDrag(cropOverlay, 'move');
+  attachPointerDrag(cropResizeHandle as HTMLElement | null, 'resize');
+
+  resetCropBtn?.addEventListener('click', async () => {
+    if (!sourceBitmap) {
+      setStatus('Upload an image first.');
+      return;
+    }
+
+    cropRect = {
+      x: 0,
+      y: 0,
+      width: sourceBitmap.width,
+      height: sourceBitmap.height
+    };
+
+    syncCropInputs();
+    await rerender();
+    setStatus('Crop reset to full image.');
+  });
+
+  rotateLeft?.addEventListener('click', async () => {
+    state.rotation -= 90;
+    if (state.rotation <= -360) state.rotation = 0;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  rotateRight?.addEventListener('click', async () => {
+    state.rotation += 90;
+    if (state.rotation >= 360) state.rotation = 0;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  flipHBtn?.addEventListener('click', async () => {
+    state.flipH = !state.flipH;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  flipVBtn?.addEventListener('click', async () => {
+    state.flipV = !state.flipV;
+    updateTransformSummary();
+    await rerender();
+  });
+
+  resetAllBtn?.addEventListener('click', async () => {
+    await resetForImage();
+  });
+
+  downloadBtn?.addEventListener('click', async () => {
+    if (!sourceBitmap || !formatSelect || !qualityRange) {
+      setStatus('Upload an image first.');
+      return;
+    }
+
+    const rendered = await renderEditedCanvas();
+    if (!rendered) {
+      setStatus('Could not render preview for export.');
+      return;
+    }
+
+    const logic = await getLogic();
+    const requested = formatSelect.value as ImageFormat;
+    const finalFormat = logic.getExportFormatWithFallback(requested, formatSupport);
+    const mime = logic.MIME_BY_FORMAT[finalFormat];
+    const quality = Number.parseFloat(qualityRange.value);
+
+    rendered.canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setStatus('Export failed in this browser. Try PNG output.');
+          return;
+        }
+
+        const ext = finalFormat === 'jpeg' ? 'jpg' : finalFormat;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `edited-image.${ext}`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+
+        if (requested !== finalFormat) {
+          setStatus(`${requested.toUpperCase()} export is unavailable here. Downloaded ${finalFormat.toUpperCase()} instead.`);
+          return;
+        }
+
+        setStatus(`Downloaded ${finalFormat.toUpperCase()} (${rendered.width}x${rendered.height}px).`);
+      },
+      mime,
+      finalFormat === 'png' ? undefined : quality
+    );
+  });
+
+  if (qualityLabel && qualityRange) {
+    qualityLabel.textContent = Number.parseFloat(qualityRange.value).toFixed(2);
+  }
+
+  updateTransformSummary();
+  detectFormatSupport();
+
+  window.addEventListener('resize', async () => {
+    if (!sourceBitmap || !beforeCanvas) return;
+    const beforeSize = drawContain(beforeCanvas, sourceBitmap, sourceBitmap.width, sourceBitmap.height);
+    renderMetrics = {
+      displayWidth: beforeSize.width,
+      displayHeight: beforeSize.height,
+      scaleX: sourceBitmap.width / beforeSize.width,
+      scaleY: sourceBitmap.height / beforeSize.height
+    };
+    await rerender();
+  });
+</script>

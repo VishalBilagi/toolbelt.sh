@@ -24,6 +24,8 @@ import Select from '../../components/ui/Select.astro';
           <Input id="svg-file" type="file" accept=".svg,image/svg+xml" />
         </Field>
 
+        <p class="cross-tool-link">Need photo-style editing (crop, rotate, flip, format convert)? <a href="/tools/image-editor">Open Image Editor Basics</a>.</p>
+
         <div class="meta-strip">
           <p id="file-name" class="meta-text">No SVG loaded.</p>
           <p id="dimension-source" class="meta-text">Dimension source: -</p>
@@ -249,6 +251,16 @@ import Select from '../../components/ui/Select.astro';
     margin-top: var(--space-md);
     display: grid;
     gap: var(--space-xs);
+  }
+
+  .cross-tool-link {
+    margin-top: var(--space-md);
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+  }
+
+  .cross-tool-link a {
+    color: var(--accent-500);
   }
 
   .meta-text {

@@ -1,4 +1,4 @@
-export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'clock';
+export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'clock' | 'image-no-background' | 'eyedropper';
 
 export interface ToolEntry {
   name: string;
@@ -31,7 +31,7 @@ export const toolSections: ToolSection[] = [
         href: '/tools/color-picker',
         description: 'Sample image pixels and extract dominant color palettes.',
         tags: ['image', 'color', 'palette', 'extract', 'local'],
-        icon: 'crop'
+        icon: 'eyedropper'
       },
       {
         name: 'SVG Resizer',
@@ -45,6 +45,13 @@ export const toolSections: ToolSection[] = [
         href: '/tools/image-optimizer',
         description: 'Compress images, target output size, and read or strip EXIF metadata.',
         tags: ['image', 'optimize', 'compress', 'exif', 'metadata'],
+        icon: 'image-no-background'
+      },
+      {
+        name: 'Image Editor Basics',
+        href: '/tools/image-editor',
+        description: 'Crop, rotate, flip, resize, and convert common image formats.',
+        tags: ['image', 'crop', 'rotate', 'flip', 'resize', 'convert', 'avif', 'webp'],
         icon: 'crop'
       }
     ]
