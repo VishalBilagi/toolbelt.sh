@@ -1,5 +1,6 @@
 ---
 import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import globalStyles from '../styles/globals.css?inline';
 import { toolSections, type ToolIcon } from '../data/tool-directory';
 interface Props {
@@ -553,6 +554,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       <slot />
     </div>
     <Analytics />
+    <SpeedInsights />
   </body>
 </html>
 
