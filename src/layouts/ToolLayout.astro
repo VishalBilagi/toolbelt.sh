@@ -4,11 +4,12 @@ interface Props {
   title: string;
 }
 const { title } = Astro.props;
+const hasTitleAside = Astro.slots.has('titleAside');
 ---
 
 <AppShell title={title}>
   <main class="ui-page tool-content">
-    <div class="tool-heading">
+    <div class:list={["tool-heading", { 'tool-heading--single': !hasTitleAside }]}>
       <h1 class="gradient-text">{title}</h1>
       <div class="tool-heading__aside">
         <slot name="titleAside" />
@@ -35,6 +36,10 @@ const { title } = Astro.props;
     gap: var(--space-lg);
     align-items: start;
     margin-bottom: var(--space-lg);
+  }
+
+  .tool-heading--single {
+    grid-template-columns: 1fr;
   }
 
   .tool-heading__aside:empty {
