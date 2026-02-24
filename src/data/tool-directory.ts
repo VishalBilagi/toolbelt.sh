@@ -1,4 +1,14 @@
-export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'clock' | 'image-no-background' | 'eyedropper';
+export type ToolIcon =
+  | 'qr'
+  | 'crop'
+  | 'svg'
+  | 'data'
+  | 'lock'
+  | 'clock'
+  | 'image-no-background'
+  | 'eyedropper'
+  | 'plus-minus'
+  | 'table-layout';
 
 export interface ToolEntry {
   name: string;
@@ -53,6 +63,26 @@ export const toolSections: ToolSection[] = [
         description: 'Crop, rotate, flip, resize, and convert common image formats.',
         tags: ['image', 'crop', 'rotate', 'flip', 'resize', 'convert', 'avif', 'webp'],
         icon: 'crop'
+      }
+    ]
+  },
+  {
+    id: 'text-developer',
+    title: 'Text & Developer',
+    tools: [
+      {
+        name: 'Text Tools',
+        href: '/tools/text-tools',
+        description: 'Diff/patch viewer, Markdown preview, and regex tester in one local-first workspace.',
+        tags: ['text', 'diff', 'patch', 'markdown', 'regex', 'tester'],
+        icon: 'plus-minus'
+      },
+      {
+        name: 'Developer Inspectors',
+        href: '/tools/developer-inspectors',
+        description: 'Data URL conversion, MIME inspection, and page asset breakdown utilities.',
+        tags: ['data-url', 'mime', 'magic-bytes', 'page-assets', 'devtools'],
+        icon: 'table-layout'
       }
     ]
   },

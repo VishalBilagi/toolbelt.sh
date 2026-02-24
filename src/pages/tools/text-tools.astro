@@ -1,0 +1,1367 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Text Tools">
+  <div slot="titleAside" class="title-aside-card">
+    <p class="eyebrow">Local-first workspace</p>
+    <p>
+      Diff, preview Markdown, and test regex patterns in one place. Inputs stay in your browser and never leave
+      the page.
+    </p>
+  </div>
+
+  <section class="text-shell">
+    <nav class="mode-strip" aria-label="Text tool modes">
+      <button type="button" class="mode-pill is-active" data-text-mode-tab="diff" aria-controls="text-mode-diff" aria-selected="true">
+        Diff / Patch
+      </button>
+      <button type="button" class="mode-pill" data-text-mode-tab="markdown" aria-controls="text-mode-markdown" aria-selected="false">
+        Markdown Preview
+      </button>
+      <button type="button" class="mode-pill" data-text-mode-tab="regex" aria-controls="text-mode-regex" aria-selected="false">
+        Regex Tester
+      </button>
+    </nav>
+
+    <section id="text-mode-diff" class="workspace-panel" data-text-mode-panel="diff">
+      <Card interactive={false} class="workspace-card">
+        <div class="workspace-head">
+          <div>
+            <h2 class="ui-card__title">Diff & Patch Studio</h2>
+            <p class="ui-card__description">
+              Compare text line-by-line, inspect a visual diff stream, and copy a unified patch-style output.
+            </p>
+          </div>
+          <div class="workspace-actions">
+            <Button id="diff-load-sample" variant="ghost">Load sample</Button>
+            <Button id="diff-swap" variant="secondary">Swap sides</Button>
+            <Button id="diff-run" variant="primary">Compare</Button>
+          </div>
+        </div>
+
+        <div class="diff-stage">
+          <section class="pane-card pane-card--input pane-card--left">
+            <div class="pane-card__head">
+              <h3>Original</h3>
+              <span class="pane-card__meta">Left input</span>
+            </div>
+            <Field label="Left text" htmlFor="diff-left-input" class="pane-field">
+              <Textarea id="diff-left-input" class="mono-textarea" rows="12" placeholder="Paste original text here..." />
+            </Field>
+          </section>
+
+          <section class="pane-card pane-card--input pane-card--right">
+            <div class="pane-card__head">
+              <h3>Updated</h3>
+              <span class="pane-card__meta">Right input</span>
+            </div>
+            <Field label="Right text" htmlFor="diff-right-input" class="pane-field">
+              <Textarea id="diff-right-input" class="mono-textarea" rows="12" placeholder="Paste updated text here..." />
+            </Field>
+          </section>
+
+          <aside class="pane-card pane-card--stats diff-stats">
+            <div class="pane-card__head">
+              <h3>Change Summary</h3>
+              <span id="diff-status" class="pane-card__meta" aria-live="polite">Ready</span>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric-tile">
+                <span>Additions</span>
+                <strong id="diff-stat-added">0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Removals</span>
+                <strong id="diff-stat-removed">0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Change blocks</span>
+                <strong id="diff-stat-blocks">0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Total lines</span>
+                <strong id="diff-stat-lines">0 → 0</strong>
+              </div>
+            </div>
+
+            <div class="stack-actions">
+              <Button id="diff-copy-patch" variant="ghost">Copy patch</Button>
+              <Button id="diff-clear" variant="ghost">Clear</Button>
+            </div>
+          </aside>
+
+          <section class="pane-card pane-card--output diff-patch">
+            <div class="pane-card__head">
+              <h3>Patch Output</h3>
+              <span class="pane-card__meta">Unified patch style</span>
+            </div>
+            <pre id="diff-patch-output" class="code-output" aria-live="polite">Patch output will appear here.</pre>
+          </section>
+
+          <section class="pane-card pane-card--output diff-visual">
+            <div class="pane-card__head">
+              <h3>Visual Diff Stream</h3>
+              <span class="pane-card__meta">Line-level additions and removals</span>
+            </div>
+            <div id="diff-line-output" class="diff-line-list" aria-live="polite">
+              <p class="empty-note">Run a compare to inspect line-by-line changes.</p>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+
+    <section id="text-mode-markdown" class="workspace-panel" data-text-mode-panel="markdown" hidden>
+      <Card interactive={false} class="workspace-card">
+        <div class="workspace-head">
+          <div>
+            <h2 class="ui-card__title">Markdown Preview Board</h2>
+            <p class="ui-card__description">
+              Write Markdown, preview the rendered document, and inspect the generated HTML plus heading outline.
+            </p>
+          </div>
+          <div class="workspace-actions">
+            <Button id="md-load-sample" variant="ghost">Load sample</Button>
+            <Button id="md-copy-html" variant="secondary">Copy HTML</Button>
+            <Button id="md-clear" variant="ghost">Clear</Button>
+          </div>
+        </div>
+
+        <div class="markdown-stage">
+          <section class="pane-card pane-card--input md-editor">
+            <div class="pane-card__head">
+              <h3>Markdown Input</h3>
+              <span id="md-status" class="pane-card__meta" aria-live="polite">Live preview ready</span>
+            </div>
+            <Field label="Markdown" htmlFor="md-input" class="pane-field">
+              <Textarea id="md-input" class="mono-textarea md-input" rows="18" placeholder="# Notes&#10;&#10;Start writing Markdown..." />
+            </Field>
+          </section>
+
+          <section class="pane-card pane-card--preview md-preview-card">
+            <div class="pane-card__head">
+              <h3>Preview</h3>
+              <span class="pane-card__meta">Rendered locally</span>
+            </div>
+            <article id="md-preview" class="md-preview" aria-live="polite">
+              <p class="empty-note">Start typing Markdown to see a live preview.</p>
+            </article>
+          </section>
+
+          <aside class="pane-card pane-card--stats md-metrics">
+            <div class="pane-card__head">
+              <h3>Document Snapshot</h3>
+              <span class="pane-card__meta">Structure + size</span>
+            </div>
+            <div class="metric-grid metric-grid--compact">
+              <div class="metric-tile">
+                <span>Words</span>
+                <strong id="md-stat-words">0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Characters</span>
+                <strong id="md-stat-chars">0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Headings</span>
+                <strong id="md-stat-headings">0</strong>
+              </div>
+            </div>
+
+            <div class="outline-shell">
+              <h4 class="mini-title">Outline</h4>
+              <ul id="md-outline" class="outline-list" aria-live="polite">
+                <li class="outline-empty">No headings yet.</li>
+              </ul>
+            </div>
+          </aside>
+
+          <section class="pane-card pane-card--output md-html-card">
+            <div class="pane-card__head">
+              <h3>Generated HTML</h3>
+              <span class="pane-card__meta">Escaped + preview-safe</span>
+            </div>
+            <pre id="md-html-output" class="code-output" aria-live="polite">Rendered HTML will appear here.</pre>
+          </section>
+        </div>
+      </Card>
+    </section>
+
+    <section id="text-mode-regex" class="workspace-panel" data-text-mode-panel="regex" hidden>
+      <Card interactive={false} class="workspace-card">
+        <div class="workspace-head">
+          <div>
+            <h2 class="ui-card__title">Regex Lab</h2>
+            <p class="ui-card__description">
+              Test JavaScript regex patterns with flags, inspect matches/groups, and see highlighted matches in context.
+            </p>
+          </div>
+          <div class="workspace-actions">
+            <Button id="regex-load-sample" variant="ghost">Load sample</Button>
+            <Button id="regex-copy-json" variant="secondary">Copy results JSON</Button>
+            <Button id="regex-run" variant="primary">Run</Button>
+          </div>
+        </div>
+
+        <div class="regex-stage">
+          <section class="pane-card pane-card--input regex-config">
+            <div class="pane-card__head">
+              <h3>Pattern & Flags</h3>
+              <span id="regex-status" class="pane-card__meta" aria-live="polite">Ready</span>
+            </div>
+            <div class="regex-fields">
+              <Field label="Pattern" htmlFor="regex-pattern" class="pane-field">
+                <Input id="regex-pattern" type="text" class="mono-input" placeholder="(?&lt;word&gt;[a-z]+)" />
+              </Field>
+              <Field label="Flags" htmlFor="regex-flags" hint="Common JS flags: g i m s u y d" class="pane-field">
+                <Input id="regex-flags" type="text" class="mono-input" maxlength="8" placeholder="gd" />
+              </Field>
+            </div>
+          </section>
+
+          <section class="pane-card pane-card--input regex-input-card">
+            <div class="pane-card__head">
+              <h3>Test Text</h3>
+              <span class="pane-card__meta">Use real snippets to validate edge cases</span>
+            </div>
+            <Field label="Input text" htmlFor="regex-input" class="pane-field">
+              <Textarea id="regex-input" class="mono-textarea" rows="12" placeholder="Paste text to test against the pattern..." />
+            </Field>
+          </section>
+
+          <aside class="pane-card pane-card--stats regex-summary-card">
+            <div class="pane-card__head">
+              <h3>Match Summary</h3>
+              <span class="pane-card__meta">Live metrics</span>
+            </div>
+            <div id="regex-summary" class="metric-grid metric-grid--compact" aria-live="polite">
+              <div class="metric-tile">
+                <span>Matches</span>
+                <strong>0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Input length</span>
+                <strong>0</strong>
+              </div>
+              <div class="metric-tile">
+                <span>Mode</span>
+                <strong>Single</strong>
+              </div>
+            </div>
+            <p class="regex-note">
+              Tip: add the <code>d</code> flag to include capture group index ranges when your runtime supports it.
+            </p>
+          </aside>
+
+          <section class="pane-card pane-card--preview regex-highlight-card">
+            <div class="pane-card__head">
+              <h3>Highlighted Matches</h3>
+              <span class="pane-card__meta">In-context preview</span>
+            </div>
+            <pre id="regex-highlight" class="highlight-view" aria-live="polite">Run a regex to highlight matches here.</pre>
+          </section>
+
+          <section class="pane-card pane-card--output regex-matches-card">
+            <div class="pane-card__head">
+              <h3>Match Details</h3>
+              <span class="pane-card__meta">Groups + ranges</span>
+            </div>
+            <div id="regex-match-list" class="match-list" aria-live="polite">
+              <p class="empty-note">No matches yet.</p>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 108rem) !important;
+    max-width: min(100%, 108rem) !important;
+  }
+
+  .title-aside-card {
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default));
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0, transparent 55%),
+      color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    padding: var(--space-md);
+    display: grid;
+    gap: 0.35rem;
+    color: var(--text-secondary);
+  }
+
+  .eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+
+  .title-aside-card p:last-child {
+    margin: 0;
+  }
+
+  .text-shell {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .mode-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+    padding: 0.45rem;
+    border: 1px solid var(--border-default);
+    border-radius: calc(var(--radius-lg) + 0.25rem);
+    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    position: sticky;
+    top: 5.2rem;
+    z-index: 4;
+    backdrop-filter: blur(8px);
+  }
+
+  .mode-pill {
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    min-height: 2.6rem;
+    padding: 0.55rem 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .mode-pill:hover,
+  .mode-pill:focus-visible {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border-default));
+    background: color-mix(in srgb, var(--bg-inset) 78%, transparent);
+  }
+
+  .mode-pill.is-active {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border-default));
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--accent) 16%, transparent),
+        color-mix(in srgb, var(--bg-inset) 84%, transparent)
+      );
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+  }
+
+  .workspace-panel[hidden] {
+    display: none;
+  }
+
+  .workspace-card {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .workspace-head {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .workspace-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: flex-end;
+  }
+
+  .pane-card {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 86%, transparent));
+    padding: var(--space-md);
+    min-width: 0;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+  }
+
+  .pane-card--preview {
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 48%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 86%, transparent));
+  }
+
+  .pane-card__head {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-sm);
+  }
+
+  .pane-card__head h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .pane-card__meta {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pane-field {
+    margin: 0;
+  }
+
+  .mono-textarea,
+  .mono-input {
+    font-family: var(--font-mono);
+    line-height: 1.45;
+  }
+
+  .mono-textarea {
+    min-height: 14rem;
+  }
+
+  .diff-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(16rem, 0.9fr);
+    grid-template-areas:
+      'left right stats'
+      'patch patch stats'
+      'visual visual visual';
+    align-items: start;
+  }
+
+  .pane-card--left {
+    grid-area: left;
+  }
+
+  .pane-card--right {
+    grid-area: right;
+  }
+
+  .diff-stats {
+    grid-area: stats;
+    position: sticky;
+    top: 9rem;
+  }
+
+  .diff-patch {
+    grid-area: patch;
+  }
+
+  .diff-visual {
+    grid-area: visual;
+  }
+
+  .metric-grid {
+    display: grid;
+    gap: var(--space-sm);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-grid--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-tile {
+    border: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+    padding: 0.7rem 0.75rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .metric-tile span {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+  }
+
+  .metric-tile strong {
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .stack-actions {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .code-output {
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 88%, transparent);
+    padding: var(--space-md);
+    min-height: 12rem;
+    max-height: 28rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .diff-line-list {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 86%, transparent);
+    overflow: hidden;
+    max-height: 26rem;
+    overflow-y: auto;
+  }
+
+  .diff-row {
+    display: grid;
+    grid-template-columns: 2.6rem 4.4rem 4.4rem minmax(0, 1fr);
+    gap: 0.45rem;
+    align-items: start;
+    padding: 0.42rem 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-default) 92%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .diff-row:last-child {
+    border-bottom: none;
+  }
+
+  .diff-row--added {
+    background: color-mix(in srgb, var(--state-success) 11%, transparent);
+  }
+
+  .diff-row--removed {
+    background: color-mix(in srgb, var(--state-danger) 11%, transparent);
+  }
+
+  .diff-row__prefix {
+    color: var(--text-tertiary);
+    font-weight: 700;
+  }
+
+  .diff-row--added .diff-row__prefix {
+    color: var(--state-success);
+  }
+
+  .diff-row--removed .diff-row__prefix {
+    color: var(--state-danger);
+  }
+
+  .diff-row__num {
+    color: var(--text-tertiary);
+  }
+
+  .diff-row__text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .markdown-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(16rem, 0.85fr);
+    grid-template-areas:
+      'editor preview metrics'
+      'html preview metrics';
+    align-items: start;
+  }
+
+  .md-editor {
+    grid-area: editor;
+  }
+
+  .md-preview-card {
+    grid-area: preview;
+  }
+
+  .md-metrics {
+    grid-area: metrics;
+    position: sticky;
+    top: 9rem;
+  }
+
+  .md-html-card {
+    grid-area: html;
+  }
+
+  .md-input {
+    min-height: 24rem;
+  }
+
+  .md-preview {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    padding: 1rem 1rem 1.1rem;
+    min-height: 24rem;
+    max-height: 38rem;
+    overflow: auto;
+    line-height: 1.55;
+  }
+
+  .md-preview :global(h1),
+  .md-preview :global(h2),
+  .md-preview :global(h3),
+  .md-preview :global(h4),
+  .md-preview :global(h5),
+  .md-preview :global(h6) {
+    margin-top: 1rem;
+    margin-bottom: 0.45rem;
+    line-height: 1.2;
+  }
+
+  .md-preview :global(h1:first-child),
+  .md-preview :global(h2:first-child),
+  .md-preview :global(h3:first-child) {
+    margin-top: 0;
+  }
+
+  .md-preview :global(p),
+  .md-preview :global(blockquote),
+  .md-preview :global(ul),
+  .md-preview :global(ol),
+  .md-preview :global(pre) {
+    margin-top: 0;
+    margin-bottom: 0.85rem;
+  }
+
+  .md-preview :global(blockquote) {
+    padding: 0.65rem 0.8rem;
+    border-left: 3px solid color-mix(in srgb, var(--accent) 42%, transparent);
+    background: color-mix(in srgb, var(--bg-inset) 70%, transparent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .md-preview :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: 0.4rem;
+    padding: 0.08rem 0.32rem;
+  }
+
+  .md-preview :global(pre) {
+    overflow: auto;
+    padding: 0.8rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    background: color-mix(in srgb, var(--bg-inset) 84%, transparent);
+  }
+
+  .md-preview :global(pre code) {
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .outline-shell {
+    margin-top: var(--space-md);
+    border-top: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    padding-top: var(--space-md);
+  }
+
+  .mini-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+
+  .outline-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.35rem;
+    max-height: 16rem;
+    overflow: auto;
+  }
+
+  .outline-list li {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-left: 2px solid color-mix(in srgb, var(--border-default) 85%, transparent);
+    padding-left: 0.55rem;
+  }
+
+  .outline-list li[data-level='1'] {
+    color: var(--text-primary);
+    border-left-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  }
+
+  .outline-list li[data-level='2'] {
+    margin-left: 0.35rem;
+  }
+
+  .outline-list li[data-level='3'] {
+    margin-left: 0.7rem;
+  }
+
+  .outline-list li[data-level='4'],
+  .outline-list li[data-level='5'],
+  .outline-list li[data-level='6'] {
+    margin-left: 1rem;
+    font-size: 0.84rem;
+  }
+
+  .outline-empty {
+    color: var(--text-tertiary);
+    border-left-style: dashed;
+  }
+
+  .regex-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(16rem, 0.8fr);
+    grid-template-areas:
+      'config config summary'
+      'input input summary'
+      'highlight highlight summary'
+      'matches matches matches';
+    align-items: start;
+  }
+
+  .regex-config {
+    grid-area: config;
+  }
+
+  .regex-input-card {
+    grid-area: input;
+  }
+
+  .regex-summary-card {
+    grid-area: summary;
+    position: sticky;
+    top: 9rem;
+  }
+
+  .regex-highlight-card {
+    grid-area: highlight;
+  }
+
+  .regex-matches-card {
+    grid-area: matches;
+  }
+
+  .regex-fields {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, 13rem);
+  }
+
+  .regex-note {
+    margin-top: var(--space-md);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+
+  .regex-note code {
+    font-family: var(--font-mono);
+  }
+
+  .highlight-view {
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 86%, transparent);
+    padding: var(--space-md);
+    min-height: 9rem;
+    max-height: 20rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-mono);
+    line-height: 1.45;
+  }
+
+  .highlight-view .match-chip {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 0.35rem;
+    padding: 0.05rem 0.2rem;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .match-list {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .match-card {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 78%, transparent);
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .match-card__top {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .match-card__label {
+    font-weight: 600;
+  }
+
+  .match-card__range {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .match-card__value {
+    margin: 0;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .group-grid {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .group-chip {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    padding: 0.45rem 0.55rem;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .group-chip__label {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+  }
+
+  .group-chip__value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .empty-note {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+
+  .error-note {
+    margin: 0;
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in srgb, var(--state-danger) 32%, var(--border-default));
+    background: color-mix(in srgb, var(--state-danger) 11%, transparent);
+    color: color-mix(in srgb, var(--state-danger) 88%, white);
+  }
+
+  @media (max-width: 1280px) {
+    .diff-stage,
+    .markdown-stage,
+    .regex-stage {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas: none;
+    }
+
+    .pane-card--left,
+    .pane-card--right,
+    .diff-stats,
+    .diff-patch,
+    .diff-visual,
+    .md-editor,
+    .md-preview-card,
+    .md-metrics,
+    .md-html-card,
+    .regex-config,
+    .regex-input-card,
+    .regex-summary-card,
+    .regex-highlight-card,
+    .regex-matches-card {
+      grid-area: auto;
+      position: static;
+    }
+
+    .md-preview {
+      min-height: 18rem;
+    }
+  }
+
+  @media (max-width: 980px) {
+    .workspace-head {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace-actions {
+      justify-content: flex-start;
+    }
+
+    .mode-strip {
+      grid-template-columns: 1fr;
+      position: static;
+    }
+
+    .diff-stage,
+    .markdown-stage,
+    .regex-stage {
+      grid-template-columns: 1fr;
+    }
+
+    .diff-row {
+      grid-template-columns: 2rem 3.2rem 3.2rem minmax(0, 1fr);
+      font-size: 0.78rem;
+    }
+
+    .regex-fields {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  let logic: typeof import('../../tools/text-tools/logic') | null = null;
+  let regexResultsJson = '';
+
+  const getLogic = async () => {
+    if (!logic) logic = await import('../../tools/text-tools/logic');
+    return logic;
+  };
+
+  function byId<T extends HTMLElement>(id: string): T | null {
+    return document.getElementById(id) as T | null;
+  }
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const copyText = async (value: string) => {
+    if (!value.trim()) return;
+    await navigator.clipboard.writeText(value);
+  };
+
+  const setTab = (mode: string) => {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('[data-text-mode-tab]');
+    const panels = document.querySelectorAll<HTMLElement>('[data-text-mode-panel]');
+
+    tabs.forEach((tab) => {
+      const active = tab.dataset.textModeTab === mode;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.textModePanel !== mode;
+    });
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-text-mode-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => setTab(tab.dataset.textModeTab ?? 'diff'));
+  });
+
+  function debounce<T extends (...args: never[]) => void>(fn: T, delay = 180) {
+    let timer: number | undefined;
+    return (...args: Parameters<T>) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  const diffLeftInput = byId<HTMLTextAreaElement>('diff-left-input');
+  const diffRightInput = byId<HTMLTextAreaElement>('diff-right-input');
+  const diffPatchOutput = byId<HTMLElement>('diff-patch-output');
+  const diffLineOutput = byId<HTMLElement>('diff-line-output');
+  const diffStatus = byId<HTMLElement>('diff-status');
+  const diffStatAdded = byId<HTMLElement>('diff-stat-added');
+  const diffStatRemoved = byId<HTMLElement>('diff-stat-removed');
+  const diffStatBlocks = byId<HTMLElement>('diff-stat-blocks');
+  const diffStatLines = byId<HTMLElement>('diff-stat-lines');
+
+  const renderDiffLines = async () => {
+    if (!diffLeftInput || !diffRightInput || !diffPatchOutput || !diffLineOutput) return;
+
+    const left = diffLeftInput.value;
+    const right = diffRightInput.value;
+    if (!left.trim() && !right.trim()) {
+      diffPatchOutput.textContent = 'Patch output will appear here.';
+      diffLineOutput.innerHTML = '<p class="empty-note">Run a compare to inspect line-by-line changes.</p>';
+      if (diffStatus) diffStatus.textContent = 'Add text to compare';
+      if (diffStatAdded) diffStatAdded.textContent = '0';
+      if (diffStatRemoved) diffStatRemoved.textContent = '0';
+      if (diffStatBlocks) diffStatBlocks.textContent = '0';
+      if (diffStatLines) diffStatLines.textContent = '0 → 0';
+      return;
+    }
+
+    try {
+      const { diffText } = await getLogic();
+      const result = diffText(left, right, { fromFile: 'a/original.txt', toFile: 'b/updated.txt' });
+
+      diffPatchOutput.textContent = result.patch;
+      if (diffStatAdded) diffStatAdded.textContent = String(result.stats.additions);
+      if (diffStatRemoved) diffStatRemoved.textContent = String(result.stats.removals);
+      if (diffStatBlocks) diffStatBlocks.textContent = String(result.stats.changedBlocks);
+      if (diffStatLines) diffStatLines.textContent = `${result.stats.leftLineCount} → ${result.stats.rightLineCount}`;
+      if (diffStatus) {
+        diffStatus.textContent =
+          result.stats.additions + result.stats.removals > 0 ? 'Diff generated' : 'No line changes detected';
+      }
+
+      if (!result.lines.length) {
+        diffLineOutput.innerHTML = '<p class="empty-note">Both inputs are empty.</p>';
+        return;
+      }
+
+      const rows = result.lines
+        .map((line) => {
+          const prefix = line.type === 'added' ? '+' : line.type === 'removed' ? '-' : '·';
+          const rowClass =
+            line.type === 'added' ? 'diff-row diff-row--added' : line.type === 'removed' ? 'diff-row diff-row--removed' : 'diff-row';
+          const leftNum = line.leftLineNumber == null ? '' : String(line.leftLineNumber);
+          const rightNum = line.rightLineNumber == null ? '' : String(line.rightLineNumber);
+          return `<div class="${rowClass}">
+            <span class="diff-row__prefix">${prefix}</span>
+            <span class="diff-row__num">${leftNum}</span>
+            <span class="diff-row__num">${rightNum}</span>
+            <span class="diff-row__text">${escapeHtml(line.text)}</span>
+          </div>`;
+        })
+        .join('');
+
+      diffLineOutput.innerHTML = rows;
+    } catch (error) {
+      if (diffStatus) diffStatus.textContent = 'Unable to compare';
+      diffPatchOutput.textContent = error instanceof Error ? error.message : 'Unable to generate diff.';
+      diffLineOutput.innerHTML = `<p class="error-note">${escapeHtml(
+        error instanceof Error ? error.message : 'Unable to generate diff.'
+      )}</p>`;
+    }
+  };
+
+  document.getElementById('diff-run')?.addEventListener('click', () => {
+    void renderDiffLines();
+  });
+
+  document.getElementById('diff-swap')?.addEventListener('click', () => {
+    if (!diffLeftInput || !diffRightInput) return;
+    const temp = diffLeftInput.value;
+    diffLeftInput.value = diffRightInput.value;
+    diffRightInput.value = temp;
+    void renderDiffLines();
+  });
+
+  document.getElementById('diff-clear')?.addEventListener('click', () => {
+    if (diffLeftInput) diffLeftInput.value = '';
+    if (diffRightInput) diffRightInput.value = '';
+    void renderDiffLines();
+  });
+
+  document.getElementById('diff-load-sample')?.addEventListener('click', () => {
+    if (diffLeftInput) {
+      diffLeftInput.value = `name: alice\nrole: admin\nregion: us-east-1\nfeatures:\n- export\n- alerts`;
+    }
+    if (diffRightInput) {
+      diffRightInput.value = `name: alice\nrole: owner\nregion: us-east-2\nfeatures:\n- export\n- alerts\n- audit-log`;
+    }
+    void renderDiffLines();
+  });
+
+  document.getElementById('diff-copy-patch')?.addEventListener('click', async () => {
+    try {
+      await copyText(diffPatchOutput?.textContent ?? '');
+      if (diffStatus) diffStatus.textContent = 'Patch copied';
+    } catch {
+      if (diffStatus) diffStatus.textContent = 'Clipboard copy failed';
+    }
+  });
+
+  [diffLeftInput, diffRightInput].forEach((node) => {
+    node?.addEventListener(
+      'keydown',
+      (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+          event.preventDefault();
+          void renderDiffLines();
+        }
+      },
+      false
+    );
+  });
+
+  const mdInput = byId<HTMLTextAreaElement>('md-input');
+  const mdPreview = byId<HTMLElement>('md-preview');
+  const mdHtmlOutput = byId<HTMLElement>('md-html-output');
+  const mdStatus = byId<HTMLElement>('md-status');
+  const mdOutline = byId<HTMLElement>('md-outline');
+  const mdWords = byId<HTMLElement>('md-stat-words');
+  const mdChars = byId<HTMLElement>('md-stat-chars');
+  const mdHeadings = byId<HTMLElement>('md-stat-headings');
+
+  const renderMarkdownPanel = async () => {
+    if (!mdInput || !mdPreview || !mdHtmlOutput || !mdOutline) return;
+
+    const source = mdInput.value;
+    if (!source.trim()) {
+      mdPreview.innerHTML = '<p class="empty-note">Start typing Markdown to see a live preview.</p>';
+      mdHtmlOutput.textContent = 'Rendered HTML will appear here.';
+      mdOutline.innerHTML = '<li class="outline-empty">No headings yet.</li>';
+      if (mdWords) mdWords.textContent = '0';
+      if (mdChars) mdChars.textContent = '0';
+      if (mdHeadings) mdHeadings.textContent = '0';
+      if (mdStatus) mdStatus.textContent = 'Live preview ready';
+      return;
+    }
+
+    try {
+      const { renderMarkdown } = await getLogic();
+      const result = renderMarkdown(source);
+      mdPreview.innerHTML = result.html || '<p class="empty-note">No preview content generated.</p>';
+      mdHtmlOutput.textContent = result.html || '<empty>';
+      if (mdWords) mdWords.textContent = String(result.wordCount);
+      if (mdChars) mdChars.textContent = String(result.charCount);
+      if (mdHeadings) mdHeadings.textContent = String(result.headings.length);
+
+      if (!result.headings.length) {
+        mdOutline.innerHTML = '<li class="outline-empty">No headings yet.</li>';
+      } else {
+        mdOutline.innerHTML = result.headings
+          .map(
+            (heading) =>
+              `<li data-level="${heading.level}">
+                <span>${escapeHtml('#'.repeat(heading.level))} ${escapeHtml(heading.text)}</span>
+              </li>`
+          )
+          .join('');
+      }
+
+      if (mdStatus) mdStatus.textContent = 'Preview updated';
+    } catch (error) {
+      if (mdStatus) mdStatus.textContent = 'Preview failed';
+      mdPreview.innerHTML = `<p class="error-note">${escapeHtml(
+        error instanceof Error ? error.message : 'Unable to render Markdown.'
+      )}</p>`;
+      mdHtmlOutput.textContent = error instanceof Error ? error.message : 'Unable to render Markdown.';
+      mdOutline.innerHTML = '<li class="outline-empty">No headings available.</li>';
+    }
+  };
+
+  const debouncedMarkdownRender = debounce(() => {
+    void renderMarkdownPanel();
+  }, 120);
+
+  mdInput?.addEventListener('input', debouncedMarkdownRender);
+
+  document.getElementById('md-load-sample')?.addEventListener('click', () => {
+    if (!mdInput) return;
+    mdInput.value = `# Release Notes
+
+## Highlights
+- Added **Text Tools** workspace
+- Faster regex testing with live match cards
+
+## Usage
+Run \`git diff\` output into the diff studio, then copy the patch summary.
+
+> Everything runs locally in your browser for quick checks.
+
+\`\`\`js
+const flags = 'gd';
+const pattern = /(?<word>[a-z]+)/gd;
+\`\`\`
+`;
+    void renderMarkdownPanel();
+  });
+
+  document.getElementById('md-clear')?.addEventListener('click', () => {
+    if (mdInput) mdInput.value = '';
+    void renderMarkdownPanel();
+  });
+
+  document.getElementById('md-copy-html')?.addEventListener('click', async () => {
+    try {
+      await copyText(mdHtmlOutput?.textContent ?? '');
+      if (mdStatus) mdStatus.textContent = 'HTML copied';
+    } catch {
+      if (mdStatus) mdStatus.textContent = 'Clipboard copy failed';
+    }
+  });
+
+  const regexPattern = byId<HTMLInputElement>('regex-pattern');
+  const regexFlags = byId<HTMLInputElement>('regex-flags');
+  const regexInput = byId<HTMLTextAreaElement>('regex-input');
+  const regexStatus = byId<HTMLElement>('regex-status');
+  const regexSummary = byId<HTMLElement>('regex-summary');
+  const regexHighlight = byId<HTMLElement>('regex-highlight');
+  const regexMatchList = byId<HTMLElement>('regex-match-list');
+
+  const renderRegexPanel = async () => {
+    if (!regexPattern || !regexFlags || !regexInput || !regexSummary || !regexHighlight || !regexMatchList) return;
+
+    const pattern = regexPattern.value;
+    const flags = regexFlags.value;
+    const input = regexInput.value;
+
+    if (!pattern.trim()) {
+      regexResultsJson = '';
+      if (regexStatus) regexStatus.textContent = 'Enter a pattern';
+      regexSummary.innerHTML = `
+        <div class="metric-tile"><span>Matches</span><strong>0</strong></div>
+        <div class="metric-tile"><span>Input length</span><strong>${input.length}</strong></div>
+        <div class="metric-tile"><span>Mode</span><strong>Single</strong></div>
+      `;
+      regexHighlight.textContent = 'Run a regex to highlight matches here.';
+      regexMatchList.innerHTML = '<p class="empty-note">No matches yet.</p>';
+      return;
+    }
+
+    try {
+      const { analyzeRegex, buildRegexHighlightSegments } = await getLogic();
+      const result = analyzeRegex(pattern, flags, input);
+      const segments = buildRegexHighlightSegments(input, result.matches);
+
+      regexResultsJson = JSON.stringify(result, null, 2);
+      if (regexStatus) {
+        regexStatus.textContent = result.matches.length ? `${result.matches.length} match${result.matches.length === 1 ? '' : 'es'}` : 'No matches';
+      }
+
+      regexSummary.innerHTML = `
+        <div class="metric-tile"><span>Matches</span><strong>${result.matches.length}</strong></div>
+        <div class="metric-tile"><span>Input length</span><strong>${result.inputLength}</strong></div>
+        <div class="metric-tile"><span>Mode</span><strong>${result.isGlobalLike ? 'Global / sticky' : 'Single match'}</strong></div>
+      `;
+
+      if (!input) {
+        regexHighlight.textContent = 'Enter test text to preview matches.';
+      } else if (!result.matches.length) {
+        regexHighlight.textContent = input;
+      } else {
+        regexHighlight.innerHTML = segments
+          .map((segment) =>
+            segment.type === 'match'
+              ? `<span class="match-chip">${escapeHtml(segment.text)}</span>`
+              : escapeHtml(segment.text)
+          )
+          .join('');
+      }
+
+      if (!result.matches.length) {
+        regexMatchList.innerHTML = '<p class="empty-note">Pattern compiled, but no matches were found.</p>';
+        return;
+      }
+
+      regexMatchList.innerHTML = result.matches
+        .map((match) => {
+          const groupMarkup = match.groups
+            .map((group) => {
+              const labelParts = [`$${group.index}`];
+              if (group.name) labelParts.push(`(${group.name})`);
+              const range =
+                group.start == null || group.end == null ? 'range unavailable' : `[${group.start}, ${group.end})`;
+              return `<div class="group-chip">
+                <span class="group-chip__label">${escapeHtml(labelParts.join(' '))} • ${escapeHtml(range)}</span>
+                <span class="group-chip__value">${escapeHtml(group.value ?? 'undefined')}</span>
+              </div>`;
+            })
+            .join('');
+
+          return `<article class="match-card">
+            <div class="match-card__top">
+              <span class="match-card__label">Match ${match.matchIndex + 1}</span>
+              <span class="match-card__range">[${match.start}, ${match.end})</span>
+            </div>
+            <pre class="match-card__value">${escapeHtml(match.value)}</pre>
+            <div class="group-grid">${groupMarkup}</div>
+          </article>`;
+        })
+        .join('');
+    } catch (error) {
+      regexResultsJson = '';
+      if (regexStatus) regexStatus.textContent = 'Invalid regex';
+      const message = error instanceof Error ? error.message : 'Unable to run regex.';
+      regexSummary.innerHTML = `
+        <div class="metric-tile"><span>Matches</span><strong>0</strong></div>
+        <div class="metric-tile"><span>Input length</span><strong>${regexInput.value.length}</strong></div>
+        <div class="metric-tile"><span>Status</span><strong>Error</strong></div>
+      `;
+      regexHighlight.innerHTML = `<span class="error-note">${escapeHtml(message)}</span>`;
+      regexMatchList.innerHTML = `<p class="error-note">${escapeHtml(message)}</p>`;
+    }
+  };
+
+  const debouncedRegexRender = debounce(() => {
+    void renderRegexPanel();
+  }, 120);
+
+  [regexPattern, regexFlags, regexInput].forEach((node) => node?.addEventListener('input', debouncedRegexRender));
+
+  document.getElementById('regex-run')?.addEventListener('click', () => {
+    void renderRegexPanel();
+  });
+
+  document.getElementById('regex-load-sample')?.addEventListener('click', () => {
+    if (regexPattern) regexPattern.value = '(?<level>INFO|WARN|ERROR)\\s+\\[(?<service>[^\\]]+)\\]\\s+(?<message>.+)$';
+    if (regexFlags) regexFlags.value = 'gmd';
+    if (regexInput) {
+      regexInput.value = `INFO [auth] Login success for user=42
+WARN [billing] Retry scheduled in 30s
+ERROR [jobs] Worker timeout after 10000ms`;
+    }
+    void renderRegexPanel();
+  });
+
+  document.getElementById('regex-copy-json')?.addEventListener('click', async () => {
+    try {
+      await copyText(regexResultsJson);
+      if (regexStatus) regexStatus.textContent = regexResultsJson ? 'Results JSON copied' : 'No results to copy';
+    } catch {
+      if (regexStatus) regexStatus.textContent = 'Clipboard copy failed';
+    }
+  });
+
+  void renderDiffLines();
+  void renderMarkdownPanel();
+  void renderRegexPanel();
+</script>

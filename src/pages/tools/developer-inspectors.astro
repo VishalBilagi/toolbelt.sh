@@ -1,0 +1,1544 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Developer Inspectors">
+  <div slot="titleAside" class="title-aside-card">
+    <p class="eyebrow">Best-effort network introspection</p>
+    <p>
+      File + Data URL conversions run locally. Page asset analysis can fetch CORS-friendly pages directly, or you can
+      paste HTML for a guaranteed local breakdown.
+    </p>
+  </div>
+
+  <section class="inspector-shell">
+    <nav class="inspector-tabs" aria-label="Developer inspector modes">
+      <button type="button" class="inspector-tab is-active" data-dev-tab="dataurl" aria-controls="dev-panel-dataurl" aria-selected="true">
+        Data URL Studio
+      </button>
+      <button type="button" class="inspector-tab" data-dev-tab="mime" aria-controls="dev-panel-mime" aria-selected="false">
+        MIME Inspector
+      </button>
+      <button type="button" class="inspector-tab" data-dev-tab="assets" aria-controls="dev-panel-assets" aria-selected="false">
+        Page Assets
+      </button>
+    </nav>
+
+    <section id="dev-panel-dataurl" class="dev-panel" data-dev-panel="dataurl">
+      <Card interactive={false} class="dev-card">
+        <div class="dev-head">
+          <div>
+            <h2 class="ui-card__title">Data URL Studio</h2>
+            <p class="ui-card__description">
+              Convert files to Data URLs and decode Data URLs back into downloadable files with MIME-aware metadata.
+            </p>
+          </div>
+          <div class="dev-actions">
+            <Button id="du-load-sample" variant="ghost">Load sample Data URL</Button>
+            <Button id="du-clear-all" variant="ghost">Clear all</Button>
+          </div>
+        </div>
+
+        <div class="studio-stage">
+          <section class="panel-box panel-box--hero">
+            <div class="panel-box__head">
+              <h3>Import File</h3>
+              <span id="du-file-status" class="panel-meta" aria-live="polite">No file selected</span>
+            </div>
+
+            <label id="du-drop-zone" class="drop-zone" for="du-file-input">
+              <input id="du-file-input" type="file" hidden />
+              <span class="drop-zone__title">Drop a file here or click to browse</span>
+              <span class="drop-zone__hint">Great for testing images, JSON, SVG, PDFs, and binary payloads.</span>
+            </label>
+
+            <div class="file-facts">
+              <div class="fact-pill">
+                <span>Name</span>
+                <strong id="du-file-name">-</strong>
+              </div>
+              <div class="fact-pill">
+                <span>Size</span>
+                <strong id="du-file-size">0 B</strong>
+              </div>
+              <div class="fact-pill">
+                <span>Type</span>
+                <strong id="du-file-type">-</strong>
+              </div>
+            </div>
+
+            <div class="hero-actions">
+              <Field label="Override MIME (optional)" htmlFor="du-mime-override" class="hero-mime-field">
+                <Input id="du-mime-override" type="text" class="mono-input" placeholder="image/png" />
+              </Field>
+              <div class="hero-action-row">
+                <Button id="du-generate" variant="primary">Generate Data URL</Button>
+                <Button id="du-copy-output" variant="secondary">Copy Data URL</Button>
+                <Button id="du-download-output" variant="ghost">Download .txt</Button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel-box panel-box--output">
+            <div class="panel-box__head">
+              <h3>File → Data URL</h3>
+              <span class="panel-meta">Base64 output</span>
+            </div>
+            <Field label="Generated Data URL" htmlFor="du-output" class="panel-field">
+              <Textarea id="du-output" class="mono-textarea" rows="10" readonly placeholder="Generated Data URL will appear here." />
+            </Field>
+          </section>
+
+          <section class="panel-box panel-box--input">
+            <div class="panel-box__head">
+              <h3>Data URL → File</h3>
+              <span id="du-reverse-status" class="panel-meta" aria-live="polite">Paste a Data URL to decode</span>
+            </div>
+            <Field label="Data URL input" htmlFor="du-dataurl-input" class="panel-field">
+              <Textarea
+                id="du-dataurl-input"
+                class="mono-textarea"
+                rows="10"
+                placeholder="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ=="
+              />
+            </Field>
+            <div class="hero-action-row">
+              <Button id="du-parse" variant="primary">Decode</Button>
+              <Button id="du-download-decoded" variant="secondary">Download file</Button>
+              <Button id="du-copy-text-preview" variant="ghost">Copy text preview</Button>
+            </div>
+          </section>
+
+          <section class="panel-box panel-box--output">
+            <div class="panel-box__head">
+              <h3>Decoded Details</h3>
+              <span class="panel-meta">MIME + payload preview</span>
+            </div>
+            <div id="du-decoded-meta" class="detail-list" aria-live="polite">
+              <p class="empty-note">Decoded metadata will appear here after parsing a Data URL.</p>
+            </div>
+            <Field label="Text preview (best effort)" htmlFor="du-text-preview" class="panel-field">
+              <Textarea id="du-text-preview" class="mono-textarea" rows="6" readonly placeholder="Text preview appears here for decodable payloads." />
+            </Field>
+          </section>
+        </div>
+      </Card>
+    </section>
+
+    <section id="dev-panel-mime" class="dev-panel" data-dev-panel="mime" hidden>
+      <Card interactive={false} class="dev-card">
+        <div class="dev-head">
+          <div>
+            <h2 class="ui-card__title">MIME Inspector</h2>
+            <p class="ui-card__description">
+              Inspect MIME type using extension and file signature (magic bytes), and compare against declared values.
+            </p>
+          </div>
+          <div class="dev-actions">
+            <Button id="mime-load-sample" variant="ghost">Load PNG sample</Button>
+            <Button id="mime-run" variant="primary">Inspect</Button>
+          </div>
+        </div>
+
+        <div class="mime-stage">
+          <section class="panel-box">
+            <div class="panel-box__head">
+              <h3>Evidence Inputs</h3>
+              <span id="mime-status" class="panel-meta" aria-live="polite">Ready</span>
+            </div>
+
+            <div class="mime-grid">
+              <Field label="File upload (optional)" htmlFor="mime-file-input" class="panel-field">
+                <Input id="mime-file-input" type="file" />
+              </Field>
+              <Field label="Filename" htmlFor="mime-filename" class="panel-field">
+                <Input id="mime-filename" type="text" class="mono-input" placeholder="example.png" />
+              </Field>
+              <Field label="Declared MIME type" htmlFor="mime-declared" class="panel-field">
+                <Input id="mime-declared" type="text" class="mono-input" placeholder="image/png" />
+              </Field>
+            </div>
+
+            <Field label="Data URL (optional, can auto-fill bytes + MIME)" htmlFor="mime-dataurl" class="panel-field">
+              <Textarea
+                id="mime-dataurl"
+                class="mono-textarea"
+                rows="6"
+                placeholder="Paste a Data URL if you want the inspector to use embedded MIME metadata + payload bytes."
+              />
+            </Field>
+          </section>
+
+          <aside class="panel-box panel-box--result">
+            <div class="panel-box__head">
+              <h3>Resolved MIME</h3>
+              <span class="panel-meta">Best effort</span>
+            </div>
+
+            <div class="result-hero">
+              <p id="mime-result-type" class="result-hero__type">application/octet-stream</p>
+              <p id="mime-result-confidence" class="result-hero__confidence">Confidence: low</p>
+            </div>
+
+            <div class="detail-list detail-list--tight">
+              <div class="detail-row">
+                <span>Extension</span>
+                <strong id="mime-result-extension">-</strong>
+              </div>
+              <div class="detail-row">
+                <span>Hex signature</span>
+                <code id="mime-result-hex">No bytes available</code>
+              </div>
+            </div>
+
+            <div class="evidence-shell">
+              <h4 class="mini-title">Evidence</h4>
+              <ul id="mime-evidence-list" class="evidence-list" aria-live="polite">
+                <li class="evidence-empty">No evidence yet.</li>
+              </ul>
+            </div>
+
+            <div class="evidence-shell">
+              <h4 class="mini-title">Notes</h4>
+              <ul id="mime-note-list" class="evidence-list" aria-live="polite">
+                <li class="evidence-empty">No notes.</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </Card>
+    </section>
+
+    <section id="dev-panel-assets" class="dev-panel" data-dev-panel="assets" hidden>
+      <Card interactive={false} class="dev-card">
+        <div class="dev-head">
+          <div>
+            <h2 class="ui-card__title">Page Asset Breakdown</h2>
+            <p class="ui-card__description">
+              Summarize scripts, styles, images, fonts, and other assets by type and size. Use URL fetch (CORS permitting) or paste raw HTML.
+            </p>
+          </div>
+          <div class="dev-actions">
+            <Button id="assets-load-sample" variant="ghost">Load sample HTML</Button>
+            <Button id="assets-analyze" variant="primary">Analyze</Button>
+          </div>
+        </div>
+
+        <div class="assets-source-card">
+          <div class="source-mode-toggle" role="tablist" aria-label="Asset source mode">
+            <button type="button" class="source-mode-btn is-active" data-assets-source-mode="url" aria-selected="true">Fetch URL</button>
+            <button type="button" class="source-mode-btn" data-assets-source-mode="html" aria-selected="false">Paste HTML</button>
+          </div>
+
+          <div id="assets-url-mode" class="source-panel">
+            <div class="source-row">
+              <Field label="Page URL" htmlFor="assets-page-url" class="panel-field source-url-field">
+                <Input id="assets-page-url" type="url" class="mono-input" placeholder="https://example.com" />
+              </Field>
+              <label class="checkbox-pill">
+                <input id="assets-probe-sizes" type="checkbox" checked />
+                <span>Probe asset sizes (best effort)</span>
+              </label>
+            </div>
+            <p class="source-help">
+              Some sites block browser-side fetching via CORS. If fetch fails, switch to <strong>Paste HTML</strong> and analyze the markup locally.
+            </p>
+          </div>
+
+          <div id="assets-html-mode" class="source-panel" hidden>
+            <Field label="HTML source" htmlFor="assets-html-input" class="panel-field">
+              <Textarea
+                id="assets-html-input"
+                class="mono-textarea"
+                rows="10"
+                placeholder="Paste a page HTML snapshot here to extract and summarize asset URLs."
+              />
+            </Field>
+          </div>
+
+          <p id="assets-status" class="source-status" aria-live="polite">Ready</p>
+        </div>
+
+        <div class="assets-stage">
+          <section class="panel-box panel-box--result">
+            <div class="panel-box__head">
+              <h3>Snapshot</h3>
+              <span class="panel-meta">Counts + known size totals</span>
+            </div>
+            <div id="assets-metrics" class="metrics-board" aria-live="polite">
+              <div class="fact-pill">
+                <span>Total assets</span>
+                <strong>0</strong>
+              </div>
+              <div class="fact-pill">
+                <span>Unique URLs</span>
+                <strong>0</strong>
+              </div>
+              <div class="fact-pill">
+                <span>Known bytes</span>
+                <strong>0 B</strong>
+              </div>
+              <div class="fact-pill">
+                <span>Unknown sizes</span>
+                <strong>0</strong>
+              </div>
+            </div>
+
+            <div class="chart-shell">
+              <h4 class="mini-title">By Asset Type</h4>
+              <div id="assets-kind-chart" class="bar-chart" aria-live="polite">
+                <p class="empty-note">Analyze a page to see a type breakdown chart.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel-box panel-box--table">
+            <div class="panel-box__head">
+              <h3>Asset Table</h3>
+              <span class="panel-meta">Detected URLs + MIME + size</span>
+            </div>
+            <div class="table-wrap">
+              <table class="asset-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Kind</th>
+                    <th scope="col">URL</th>
+                    <th scope="col">MIME</th>
+                    <th scope="col">Size</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody id="assets-table-body">
+                  <tr>
+                    <td colspan="5" class="empty-cell">No analysis yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 108rem) !important;
+    max-width: min(100%, 108rem) !important;
+  }
+
+  .title-aside-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default));
+    background:
+      radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 52%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 88%, transparent));
+    padding: var(--space-md);
+    color: var(--text-secondary);
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .title-aside-card p:last-child {
+    margin: 0;
+  }
+
+  .inspector-shell {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .inspector-tabs {
+    display: flex;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding: 0.45rem;
+    border-radius: calc(var(--radius-lg) + 0.2rem);
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    position: sticky;
+    top: 5.2rem;
+    z-index: 4;
+    backdrop-filter: blur(8px);
+  }
+
+  .inspector-tab {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    min-height: 2.55rem;
+    padding: 0.55rem 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .inspector-tab:hover,
+  .inspector-tab:focus-visible {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border-default));
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+  }
+
+  .inspector-tab.is-active {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-default));
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--accent) 18%, transparent),
+        color-mix(in srgb, var(--bg-inset) 82%, transparent)
+      );
+  }
+
+  .dev-panel[hidden] {
+    display: none;
+  }
+
+  .dev-card {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .dev-head {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .dev-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: flex-end;
+  }
+
+  .panel-box {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 86%, transparent));
+    padding: var(--space-md);
+    min-width: 0;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+  }
+
+  .panel-box--hero {
+    background:
+      radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 48%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 95%, transparent), color-mix(in srgb, var(--bg-surface) 88%, transparent));
+  }
+
+  .panel-box__head {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-sm);
+  }
+
+  .panel-box__head h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .panel-meta {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .panel-field {
+    margin: 0;
+  }
+
+  .mono-input,
+  .mono-textarea {
+    font-family: var(--font-mono);
+  }
+
+  .studio-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-areas:
+      'hero outputA'
+      'hero inputB'
+      'metaB metaB';
+    align-items: start;
+  }
+
+  .studio-stage > :nth-child(1) {
+    grid-area: hero;
+  }
+
+  .studio-stage > :nth-child(2) {
+    grid-area: outputA;
+  }
+
+  .studio-stage > :nth-child(3) {
+    grid-area: inputB;
+  }
+
+  .studio-stage > :nth-child(4) {
+    grid-area: metaB;
+  }
+
+  .drop-zone {
+    display: grid;
+    gap: 0.35rem;
+    justify-items: start;
+    border: 1px dashed color-mix(in srgb, var(--accent) 38%, var(--border-default));
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 58%),
+      color-mix(in srgb, var(--bg-inset) 78%, transparent);
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+  }
+
+  .drop-zone:hover,
+  .drop-zone:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 52%, var(--border-default));
+    transform: translateY(-1px);
+  }
+
+  .drop-zone.is-dragging {
+    border-color: color-mix(in srgb, var(--state-success) 65%, var(--accent));
+    background: color-mix(in srgb, var(--state-success) 11%, var(--bg-inset));
+  }
+
+  .drop-zone__title {
+    font-weight: 600;
+  }
+
+  .drop-zone__hint {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .file-facts,
+  .metrics-board {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .fact-pill {
+    border: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+    padding: 0.65rem 0.75rem;
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .fact-pill span {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+  }
+
+  .fact-pill strong {
+    font-size: 0.96rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hero-actions {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .hero-mime-field {
+    max-width: 26rem;
+  }
+
+  .hero-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .detail-list {
+    display: grid;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .detail-list--tight {
+    margin-bottom: 0;
+  }
+
+  .detail-row {
+    display: grid;
+    gap: 0.25rem;
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-inset) 76%, transparent);
+    padding: 0.55rem 0.65rem;
+  }
+
+  .detail-row span {
+    color: var(--text-tertiary);
+    font-size: 0.76rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .detail-row strong,
+  .detail-row code {
+    font-family: var(--font-mono);
+    word-break: break-word;
+    font-size: 0.84rem;
+  }
+
+  .mime-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.9fr);
+    align-items: start;
+  }
+
+  .mime-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin-bottom: var(--space-md);
+  }
+
+  .panel-box--result {
+    position: sticky;
+    top: 9rem;
+  }
+
+  .result-hero {
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default));
+    border-radius: var(--radius-md);
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 52%),
+      color-mix(in srgb, var(--bg-inset) 76%, transparent);
+    padding: 0.75rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .result-hero__type {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .result-hero__confidence {
+    margin: 0.35rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .evidence-shell {
+    margin-top: var(--space-md);
+  }
+
+  .mini-title {
+    margin: 0 0 0.45rem;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .evidence-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .evidence-list li {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+    padding: 0.5rem 0.6rem;
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+
+  .evidence-list code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  .evidence-empty {
+    color: var(--text-tertiary);
+  }
+
+  .assets-source-card {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    padding: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .source-mode-toggle {
+    display: inline-flex;
+    gap: 0.45rem;
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    padding: 0.3rem;
+    width: fit-content;
+    background: color-mix(in srgb, var(--bg-inset) 70%, transparent);
+  }
+
+  .source-mode-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .source-mode-btn.is-active {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border-default));
+    background: color-mix(in srgb, var(--bg-surface) 86%, transparent);
+  }
+
+  .source-row {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .source-url-field {
+    margin: 0;
+  }
+
+  .checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    background: color-mix(in srgb, var(--bg-inset) 72%, transparent);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .checkbox-pill input {
+    margin: 0;
+  }
+
+  .source-help,
+  .source-status {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .assets-stage {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.35fr);
+    align-items: start;
+  }
+
+  .chart-shell {
+    margin-top: var(--space-md);
+    border-top: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    padding-top: var(--space-md);
+  }
+
+  .bar-chart {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .bar-row {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .bar-row__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: 0.85rem;
+  }
+
+  .bar-row__label {
+    text-transform: capitalize;
+  }
+
+  .bar-row__value {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  .bar-track {
+    height: 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-inset) 72%, transparent);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border-default) 92%, transparent);
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 38%, transparent), color-mix(in srgb, var(--accent) 62%, white));
+  }
+
+  .panel-box--table {
+    min-height: 20rem;
+  }
+
+  .table-wrap {
+    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
+    border-radius: var(--radius-md);
+    overflow: auto;
+    max-height: 34rem;
+  }
+
+  .asset-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 52rem;
+    font-size: 0.88rem;
+  }
+
+  .asset-table th,
+  .asset-table td {
+    padding: 0.55rem 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-default) 92%, transparent);
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .asset-table thead th {
+    position: sticky;
+    top: 0;
+    background: color-mix(in srgb, var(--bg-surface) 95%, transparent);
+    z-index: 1;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .asset-table code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    word-break: break-all;
+  }
+
+  .kind-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--border-default) 88%, transparent);
+    background: color-mix(in srgb, var(--bg-inset) 72%, transparent);
+    text-transform: capitalize;
+    white-space: nowrap;
+    font-size: 0.78rem;
+  }
+
+  .empty-cell {
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+
+  .empty-note {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+
+  .error-note {
+    margin: 0;
+    color: color-mix(in srgb, var(--state-danger) 86%, white);
+    padding: 0.7rem 0.8rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in srgb, var(--state-danger) 30%, var(--border-default));
+    background: color-mix(in srgb, var(--state-danger) 11%, transparent);
+  }
+
+  @media (max-width: 1280px) {
+    .studio-stage,
+    .mime-stage,
+    .assets-stage {
+      grid-template-columns: 1fr;
+      grid-template-areas: none;
+    }
+
+    .studio-stage > * {
+      grid-area: auto !important;
+    }
+
+    .panel-box--result {
+      position: static;
+    }
+  }
+
+  @media (max-width: 980px) {
+    .dev-head {
+      grid-template-columns: 1fr;
+    }
+
+    .dev-actions {
+      justify-content: flex-start;
+    }
+
+    .inspector-tabs {
+      position: static;
+    }
+
+    .source-row {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+
+    .mime-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .asset-table {
+      min-width: 42rem;
+    }
+  }
+</style>
+
+<script>
+  let logic: typeof import('../../tools/developer-inspectors/logic') | null = null;
+
+  interface DataUrlState {
+    fileBytes: Uint8Array | null;
+    fileName: string;
+    fileType: string;
+    generatedDataUrl: string;
+    decoded: {
+      mimeType: string;
+      bytes: Uint8Array;
+      isBase64: boolean;
+      charset: string | null;
+    } | null;
+  }
+
+  let dataUrlState: DataUrlState = {
+    fileBytes: null,
+    fileName: '',
+    fileType: '',
+    generatedDataUrl: '',
+    decoded: null
+  };
+
+  let mimeBytes: Uint8Array | undefined;
+  let assetsSourceMode: 'url' | 'html' = 'url';
+
+  const getLogic = async () => {
+    if (!logic) logic = await import('../../tools/developer-inspectors/logic');
+    return logic;
+  };
+
+  function byId<T extends HTMLElement>(id: string): T | null {
+    return document.getElementById(id) as T | null;
+  }
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const formatBytes = (bytes: number): string => {
+    if (!Number.isFinite(bytes) || bytes < 0) return '-';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+    return `${value >= 100 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+  };
+
+  const copyText = async (value: string) => {
+    if (!value.trim()) return;
+    await navigator.clipboard.writeText(value);
+  };
+
+  const downloadText = (filename: string, value: string) => {
+    if (!value.trim()) return;
+    const blob = new Blob([value], { type: 'text/plain;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(href);
+  };
+
+  const downloadBytes = (filename: string, bytes: Uint8Array, mimeType: string) => {
+    const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(href);
+  };
+
+  const setDevTab = (mode: string) => {
+    document.querySelectorAll<HTMLButtonElement>('[data-dev-tab]').forEach((button) => {
+      const active = button.dataset.devTab === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-dev-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.devPanel !== mode;
+    });
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-dev-tab]').forEach((button) => {
+    button.addEventListener('click', () => setDevTab(button.dataset.devTab ?? 'dataurl'));
+  });
+
+  const setAssetsSourceMode = (mode: 'url' | 'html') => {
+    assetsSourceMode = mode;
+    document.querySelectorAll<HTMLButtonElement>('[data-assets-source-mode]').forEach((button) => {
+      const active = button.dataset.assetsSourceMode === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    const urlPanel = byId<HTMLElement>('assets-url-mode');
+    const htmlPanel = byId<HTMLElement>('assets-html-mode');
+    if (urlPanel) urlPanel.hidden = mode !== 'url';
+    if (htmlPanel) htmlPanel.hidden = mode !== 'html';
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-assets-source-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.assetsSourceMode === 'html' ? 'html' : 'url';
+      setAssetsSourceMode(mode);
+    });
+  });
+
+  const mimeToExtension = (mimeType: string): string => {
+    const normalized = mimeType.toLowerCase();
+    if (normalized === 'image/png') return 'png';
+    if (normalized === 'image/jpeg') return 'jpg';
+    if (normalized === 'image/gif') return 'gif';
+    if (normalized === 'image/webp') return 'webp';
+    if (normalized === 'image/svg+xml') return 'svg';
+    if (normalized === 'application/pdf') return 'pdf';
+    if (normalized === 'text/plain') return 'txt';
+    if (normalized === 'application/json') return 'json';
+    if (normalized === 'text/html') return 'html';
+    if (normalized === 'text/css') return 'css';
+    if (normalized === 'text/javascript') return 'js';
+    if (normalized === 'application/zip') return 'zip';
+    return 'bin';
+  };
+
+  const duFileInput = byId<HTMLInputElement>('du-file-input');
+  const duDropZone = byId<HTMLLabelElement>('du-drop-zone');
+  const duFileStatus = byId<HTMLElement>('du-file-status');
+  const duFileName = byId<HTMLElement>('du-file-name');
+  const duFileSize = byId<HTMLElement>('du-file-size');
+  const duFileType = byId<HTMLElement>('du-file-type');
+  const duMimeOverride = byId<HTMLInputElement>('du-mime-override');
+  const duOutput = byId<HTMLTextAreaElement>('du-output');
+  const duDataUrlInput = byId<HTMLTextAreaElement>('du-dataurl-input');
+  const duReverseStatus = byId<HTMLElement>('du-reverse-status');
+  const duDecodedMeta = byId<HTMLElement>('du-decoded-meta');
+  const duTextPreview = byId<HTMLTextAreaElement>('du-text-preview');
+
+  const renderFileFacts = () => {
+    if (duFileName) duFileName.textContent = dataUrlState.fileName || '-';
+    if (duFileSize) duFileSize.textContent = dataUrlState.fileBytes ? formatBytes(dataUrlState.fileBytes.length) : '0 B';
+    if (duFileType) duFileType.textContent = dataUrlState.fileType || '-';
+    if (duFileStatus) duFileStatus.textContent = dataUrlState.fileBytes ? 'File ready' : 'No file selected';
+  };
+
+  const readFileIntoState = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    dataUrlState.fileBytes = new Uint8Array(arrayBuffer);
+    dataUrlState.fileName = file.name;
+    dataUrlState.fileType = file.type || '';
+    renderFileFacts();
+
+    const mimeFileName = byId<HTMLInputElement>('mime-filename');
+    const mimeDeclared = byId<HTMLInputElement>('mime-declared');
+    if (mimeFileName && !mimeFileName.value.trim()) mimeFileName.value = file.name;
+    if (mimeDeclared && !mimeDeclared.value.trim() && file.type) mimeDeclared.value = file.type;
+    mimeBytes = dataUrlState.fileBytes;
+  };
+
+  duFileInput?.addEventListener('change', async () => {
+    const file = duFileInput.files?.[0];
+    if (!file) return;
+    await readFileIntoState(file);
+  });
+
+  if (duDropZone && duFileInput) {
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      duDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        duDropZone.classList.add('is-dragging');
+      });
+    });
+    ['dragleave', 'drop'].forEach((eventName) => {
+      duDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        duDropZone.classList.remove('is-dragging');
+      });
+    });
+    duDropZone.addEventListener('drop', async (event) => {
+      const files = event.dataTransfer?.files;
+      const file = files?.[0];
+      if (!file) return;
+      await readFileIntoState(file);
+    });
+  }
+
+  document.getElementById('du-generate')?.addEventListener('click', async () => {
+    if (!dataUrlState.fileBytes || !duOutput) {
+      if (duFileStatus) duFileStatus.textContent = 'Select a file first';
+      return;
+    }
+    try {
+      const { bytesToDataUrl } = await getLogic();
+      const mimeType =
+        (duMimeOverride?.value?.trim() || dataUrlState.fileType || 'application/octet-stream').toLowerCase();
+      dataUrlState.generatedDataUrl = bytesToDataUrl(dataUrlState.fileBytes, { mimeType });
+      duOutput.value = dataUrlState.generatedDataUrl;
+      if (duFileStatus) duFileStatus.textContent = 'Data URL generated';
+    } catch (error) {
+      if (duFileStatus) duFileStatus.textContent = error instanceof Error ? error.message : 'Unable to generate Data URL';
+    }
+  });
+
+  document.getElementById('du-copy-output')?.addEventListener('click', async () => {
+    try {
+      await copyText(duOutput?.value ?? '');
+      if (duFileStatus) duFileStatus.textContent = duOutput?.value ? 'Data URL copied' : 'Nothing to copy';
+    } catch {
+      if (duFileStatus) duFileStatus.textContent = 'Clipboard copy failed';
+    }
+  });
+
+  document.getElementById('du-download-output')?.addEventListener('click', () => {
+    downloadText(`${(dataUrlState.fileName || 'data-url').replace(/\.[^.]+$/, '')}.data-url.txt`, duOutput?.value ?? '');
+  });
+
+  const renderDecodedMeta = (state: DataUrlState['decoded']) => {
+    if (!duDecodedMeta || !duTextPreview) return;
+    if (!state) {
+      duDecodedMeta.innerHTML = '<p class="empty-note">Decoded metadata will appear here after parsing a Data URL.</p>';
+      duTextPreview.value = '';
+      return;
+    }
+
+    const previewText = (() => {
+      try {
+        return new TextDecoder().decode(state.bytes);
+      } catch {
+        return '';
+      }
+    })();
+
+    duTextPreview.value = previewText;
+    duDecodedMeta.innerHTML = `
+      <div class="detail-row"><span>MIME type</span><strong>${escapeHtml(state.mimeType)}</strong></div>
+      <div class="detail-row"><span>Encoding</span><strong>${state.isBase64 ? 'base64' : 'percent-encoded'}</strong></div>
+      <div class="detail-row"><span>Charset</span><strong>${escapeHtml(state.charset ?? '-')}</strong></div>
+      <div class="detail-row"><span>Bytes</span><strong>${formatBytes(state.bytes.length)} (${state.bytes.length})</strong></div>
+    `;
+  };
+
+  document.getElementById('du-parse')?.addEventListener('click', async () => {
+    const value = duDataUrlInput?.value ?? '';
+    if (!value.trim()) {
+      if (duReverseStatus) duReverseStatus.textContent = 'Paste a Data URL to decode';
+      dataUrlState.decoded = null;
+      renderDecodedMeta(null);
+      return;
+    }
+
+    try {
+      const { parseDataUrl } = await getLogic();
+      const parsed = parseDataUrl(value);
+      dataUrlState.decoded = {
+        mimeType: parsed.mimeType,
+        bytes: parsed.bytes,
+        isBase64: parsed.isBase64,
+        charset: parsed.charset
+      };
+      renderDecodedMeta(dataUrlState.decoded);
+      if (duReverseStatus) duReverseStatus.textContent = 'Data URL decoded';
+
+      const mimeDataUrl = byId<HTMLTextAreaElement>('mime-dataurl');
+      if (mimeDataUrl && !mimeDataUrl.value.trim()) mimeDataUrl.value = value.trim();
+    } catch (error) {
+      dataUrlState.decoded = null;
+      renderDecodedMeta(null);
+      if (duReverseStatus) duReverseStatus.textContent = error instanceof Error ? error.message : 'Unable to decode Data URL';
+      if (duDecodedMeta) {
+        duDecodedMeta.innerHTML = `<p class="error-note">${escapeHtml(
+          error instanceof Error ? error.message : 'Unable to decode Data URL.'
+        )}</p>`;
+      }
+    }
+  });
+
+  document.getElementById('du-download-decoded')?.addEventListener('click', () => {
+    const decoded = dataUrlState.decoded;
+    if (!decoded) return;
+    const extension = mimeToExtension(decoded.mimeType);
+    downloadBytes(`decoded.${extension}`, decoded.bytes, decoded.mimeType);
+  });
+
+  document.getElementById('du-copy-text-preview')?.addEventListener('click', async () => {
+    try {
+      await copyText(duTextPreview?.value ?? '');
+      if (duReverseStatus) duReverseStatus.textContent = duTextPreview?.value ? 'Text preview copied' : 'No text preview available';
+    } catch {
+      if (duReverseStatus) duReverseStatus.textContent = 'Clipboard copy failed';
+    }
+  });
+
+  document.getElementById('du-load-sample')?.addEventListener('click', () => {
+    if (!duDataUrlInput) return;
+    duDataUrlInput.value = 'data:text/plain;base64,SGVsbG8sIERldmVsb3BlciBJbnNwZWN0b3JzIQ==';
+    if (duReverseStatus) duReverseStatus.textContent = 'Sample loaded';
+  });
+
+  document.getElementById('du-clear-all')?.addEventListener('click', () => {
+    dataUrlState = { fileBytes: null, fileName: '', fileType: '', generatedDataUrl: '', decoded: null };
+    if (duFileInput) duFileInput.value = '';
+    if (duMimeOverride) duMimeOverride.value = '';
+    if (duOutput) duOutput.value = '';
+    if (duDataUrlInput) duDataUrlInput.value = '';
+    renderFileFacts();
+    renderDecodedMeta(null);
+    if (duReverseStatus) duReverseStatus.textContent = 'Paste a Data URL to decode';
+  });
+
+  const mimeFileInput = byId<HTMLInputElement>('mime-file-input');
+  const mimeFilename = byId<HTMLInputElement>('mime-filename');
+  const mimeDeclared = byId<HTMLInputElement>('mime-declared');
+  const mimeDataUrl = byId<HTMLTextAreaElement>('mime-dataurl');
+  const mimeStatus = byId<HTMLElement>('mime-status');
+  const mimeResultType = byId<HTMLElement>('mime-result-type');
+  const mimeResultConfidence = byId<HTMLElement>('mime-result-confidence');
+  const mimeResultExtension = byId<HTMLElement>('mime-result-extension');
+  const mimeResultHex = byId<HTMLElement>('mime-result-hex');
+  const mimeEvidenceList = byId<HTMLElement>('mime-evidence-list');
+  const mimeNoteList = byId<HTMLElement>('mime-note-list');
+
+  mimeFileInput?.addEventListener('change', async () => {
+    const file = mimeFileInput.files?.[0];
+    if (!file) return;
+    mimeBytes = new Uint8Array(await file.arrayBuffer());
+    if (mimeFilename) mimeFilename.value = file.name;
+    if (mimeDeclared && file.type) mimeDeclared.value = file.type;
+    if (mimeStatus) mimeStatus.textContent = 'File bytes loaded';
+  });
+
+  const runMimeInspection = async () => {
+    try {
+      const { inspectMime } = await getLogic();
+      const result = inspectMime({
+        fileName: mimeFilename?.value ?? '',
+        bytes: mimeBytes,
+        declaredMimeType: mimeDeclared?.value ?? '',
+        dataUrl: mimeDataUrl?.value ?? ''
+      });
+
+      if (mimeResultType) mimeResultType.textContent = result.mimeType;
+      if (mimeResultConfidence) mimeResultConfidence.textContent = `Confidence: ${result.confidence}`;
+      if (mimeResultExtension) mimeResultExtension.textContent = result.extension ? `.${result.extension}` : '-';
+      if (mimeResultHex) mimeResultHex.textContent = result.hexSignature;
+
+      if (mimeEvidenceList) {
+        mimeEvidenceList.innerHTML = result.evidences.length
+          ? result.evidences
+              .map(
+                (evidence) =>
+                  `<li><strong>${escapeHtml(evidence.source)}</strong> → <code>${escapeHtml(
+                    evidence.mimeType
+                  )}</code><br />${escapeHtml(evidence.detail)} <em>(confidence: ${escapeHtml(evidence.confidence)})</em></li>`
+              )
+              .join('')
+          : '<li class="evidence-empty">No evidence yet.</li>';
+      }
+
+      if (mimeNoteList) {
+        mimeNoteList.innerHTML = result.notes.length
+          ? result.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')
+          : '<li class="evidence-empty">No notes.</li>';
+      }
+
+      if (mimeStatus) mimeStatus.textContent = 'Inspection complete';
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to inspect MIME.';
+      if (mimeStatus) mimeStatus.textContent = message;
+      if (mimeEvidenceList) mimeEvidenceList.innerHTML = `<li class="error-note">${escapeHtml(message)}</li>`;
+    }
+  };
+
+  document.getElementById('mime-run')?.addEventListener('click', () => {
+    void runMimeInspection();
+  });
+
+  document.getElementById('mime-load-sample')?.addEventListener('click', () => {
+    if (mimeFilename) mimeFilename.value = 'image.png';
+    if (mimeDeclared) mimeDeclared.value = 'image/png';
+    mimeBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
+    if (mimeStatus) mimeStatus.textContent = 'PNG signature sample loaded';
+    void runMimeInspection();
+  });
+
+  const assetsPageUrl = byId<HTMLInputElement>('assets-page-url');
+  const assetsProbeSizes = byId<HTMLInputElement>('assets-probe-sizes');
+  const assetsHtmlInput = byId<HTMLTextAreaElement>('assets-html-input');
+  const assetsStatus = byId<HTMLElement>('assets-status');
+  const assetsMetrics = byId<HTMLElement>('assets-metrics');
+  const assetsKindChart = byId<HTMLElement>('assets-kind-chart');
+  const assetsTableBody = byId<HTMLElement>('assets-table-body');
+
+  const probeAssetSizes = async (urls: string[]): Promise<Record<string, number>> => {
+    const hints: Record<string, number> = {};
+    const candidates = urls
+      .filter((url) => !url.startsWith('data:'))
+      .slice(0, 30);
+
+    await Promise.allSettled(
+      candidates.map(async (url) => {
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          const header = response.headers.get('content-length');
+          const parsed = header ? Number.parseInt(header, 10) : Number.NaN;
+          if (Number.isFinite(parsed) && parsed >= 0) {
+            hints[url] = parsed;
+          }
+        } catch {
+          // Best effort only; CORS/network failures are expected for many URLs.
+        }
+      })
+    );
+
+    return hints;
+  };
+
+  const renderAssetSummary = async (assets: Array<{
+    url: string;
+    kind: string;
+    mimeType: string | null;
+    sizeBytes: number | null;
+    tag: string;
+    attribute: string;
+  }>) => {
+    const { summarizePageAssets } = await getLogic();
+    const summary = summarizePageAssets(assets);
+
+    if (assetsMetrics) {
+      assetsMetrics.innerHTML = `
+        <div class="fact-pill"><span>Total assets</span><strong>${summary.totalAssets}</strong></div>
+        <div class="fact-pill"><span>Unique URLs</span><strong>${summary.uniqueAssetCount}</strong></div>
+        <div class="fact-pill"><span>Known bytes</span><strong>${formatBytes(summary.knownSizeBytes)}</strong></div>
+        <div class="fact-pill"><span>Unknown sizes</span><strong>${summary.unknownSizeCount}</strong></div>
+      `;
+    }
+
+    if (assetsKindChart) {
+      if (!summary.kindBreakdown.length) {
+        assetsKindChart.innerHTML = '<p class="empty-note">No assets detected from the provided source.</p>';
+      } else {
+        const maxValue = Math.max(
+          ...summary.kindBreakdown.map((row) => (summary.knownSizeBytes > 0 ? row.totalSizeBytes : row.count)),
+          1
+        );
+        assetsKindChart.innerHTML = summary.kindBreakdown
+          .map((row) => {
+            const chartValue = summary.knownSizeBytes > 0 ? row.totalSizeBytes : row.count;
+            const width = Math.max(4, Math.round((chartValue / maxValue) * 100));
+            const labelValue =
+              summary.knownSizeBytes > 0
+                ? `${formatBytes(row.totalSizeBytes)} • ${row.count} item${row.count === 1 ? '' : 's'}`
+                : `${row.count} item${row.count === 1 ? '' : 's'}`;
+            return `<div class="bar-row">
+              <div class="bar-row__meta">
+                <span class="bar-row__label">${escapeHtml(row.kind)}</span>
+                <span class="bar-row__value">${escapeHtml(labelValue)}</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+            </div>`;
+          })
+          .join('');
+      }
+    }
+
+    if (assetsTableBody) {
+      if (!summary.assets.length) {
+        assetsTableBody.innerHTML = '<tr><td colspan="5" class="empty-cell">No assets detected.</td></tr>';
+      } else {
+        assetsTableBody.innerHTML = summary.assets
+          .slice(0, 200)
+          .map(
+            (asset) => `<tr>
+              <td><span class="kind-pill">${escapeHtml(asset.kind)}</span></td>
+              <td><code>${escapeHtml(asset.url)}</code></td>
+              <td><code>${escapeHtml(asset.mimeType ?? '-')}</code></td>
+              <td>${asset.sizeBytes == null ? 'Unknown' : escapeHtml(formatBytes(asset.sizeBytes))}</td>
+              <td><code>${escapeHtml(`${asset.tag}[${asset.attribute}]`)}</code></td>
+            </tr>`
+          )
+          .join('');
+      }
+    }
+  };
+
+  const analyzeAssets = async () => {
+    if (!assetsStatus) return;
+
+    try {
+      const { extractPageAssets, applyAssetSizeHints } = await getLogic();
+
+      let html = '';
+      let baseUrl = '';
+      if (assetsSourceMode === 'url') {
+        const url = assetsPageUrl?.value?.trim() ?? '';
+        if (!url) {
+          assetsStatus.textContent = 'Enter a page URL or switch to Paste HTML';
+          return;
+        }
+
+        assetsStatus.textContent = 'Fetching page HTML…';
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch page (${response.status}). Some sites require using Paste HTML due to CORS.`);
+        }
+        html = await response.text();
+        baseUrl = url;
+      } else {
+        html = assetsHtmlInput?.value ?? '';
+        if (!html.trim()) {
+          assetsStatus.textContent = 'Paste HTML to analyze';
+          return;
+        }
+        baseUrl = assetsPageUrl?.value?.trim() ?? '';
+      }
+
+      let assets = extractPageAssets(html, baseUrl || undefined);
+      if (!assets.length) {
+        assetsStatus.textContent = 'No asset tags detected';
+        await renderAssetSummary([]);
+        return;
+      }
+
+      const shouldProbe = assetsSourceMode === 'url' && Boolean(assetsProbeSizes?.checked);
+      if (shouldProbe) {
+        assetsStatus.textContent = `Probing up to 30 asset sizes (best effort)…`;
+        const uniqueUrls = Array.from(new Set(assets.map((asset) => asset.url)));
+        const hints = await probeAssetSizes(uniqueUrls);
+        assets = applyAssetSizeHints(assets, hints);
+      }
+
+      await renderAssetSummary(assets);
+      const unresolved = assets.filter((asset) => asset.sizeBytes == null).length;
+      assetsStatus.textContent =
+        unresolved > 0
+          ? `Analyzed ${assets.length} assets (${unresolved} size${unresolved === 1 ? '' : 's'} unknown, often due to CORS/no content-length).`
+          : `Analyzed ${assets.length} assets with known sizes.`;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to analyze page assets.';
+      assetsStatus.textContent = message;
+      if (assetsKindChart) assetsKindChart.innerHTML = `<p class="error-note">${escapeHtml(message)}</p>`;
+      if (assetsTableBody) {
+        assetsTableBody.innerHTML = `<tr><td colspan="5" class="empty-cell">${escapeHtml(
+          'Analysis failed. Try Paste HTML mode if URL fetch is blocked.'
+        )}</td></tr>`;
+      }
+    }
+  };
+
+  document.getElementById('assets-analyze')?.addEventListener('click', () => {
+    void analyzeAssets();
+  });
+
+  document.getElementById('assets-load-sample')?.addEventListener('click', () => {
+    setAssetsSourceMode('html');
+    if (assetsHtmlInput) {
+      assetsHtmlInput.value = `<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="/styles/site.css" />
+    <link rel="preload" as="font" href="/fonts/inter.woff2" />
+    <script src="/app.js" defer><\\/script>
+  </head>
+  <body>
+    <img src="/hero.png" srcset="/hero@2x.png 2x, /hero@3x.png 3x" />
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" />
+  </body>
+</html>`;
+    }
+    if (assetsPageUrl) assetsPageUrl.value = 'https://example.com';
+    if (assetsStatus) assetsStatus.textContent = 'Sample HTML loaded';
+  });
+
+  [assetsPageUrl, assetsHtmlInput].forEach((node) => {
+    node?.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        void analyzeAssets();
+      }
+    });
+  });
+
+  renderFileFacts();
+  renderDecodedMeta(null);
+</script>

@@ -35,7 +35,9 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
   lock: 'lock',
   clock: 'clock',
   'image-no-background': 'image-no-background',
-  eyedropper: 'eyedropper'
+  eyedropper: 'eyedropper',
+  'plus-minus': 'plus-minus',
+  'table-layout': 'table-layout'
 };
 ---
 <!doctype html>
@@ -266,7 +268,25 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       };
     </script>
     <script>
-      import { getIcons, Moon, Sun, Github, Lock, Bolt, MobileAlt, QrScan, Crop, Database, Grid, ImageSparkle, Clock, ImageNoBackground, Eyedropper } from '@boxicons/js';
+      import {
+        getIcons,
+        Moon,
+        Sun,
+        Github,
+        Lock,
+        Bolt,
+        MobileAlt,
+        QrScan,
+        Crop,
+        Database,
+        Grid,
+        ImageSparkle,
+        Clock,
+        ImageNoBackground,
+        Eyedropper,
+        PlusMinus,
+        TableLayout
+      } from '@boxicons/js';
       import { configureFeatureFlags, primeFeatureFlags } from '../lib/feature-flags';
 
       const mountIcons = () => {
@@ -285,7 +305,9 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
             ImageSparkle,
             Clock,
             ImageNoBackground,
-            Eyedropper
+            Eyedropper,
+            PlusMinus,
+            TableLayout
           }
         });
       };
