@@ -54,7 +54,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     </script>
   </head>
   <body>
-    <script is:inline>
+    <script is:inline define:vars={{ disableScrollReveal }}>
       const html = document.documentElement;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -89,7 +89,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       });
 
       const setupScrollReveal = () => {
-        if ({disableScrollReveal ? 'true' : 'false'} === 'true') return;
+        if (disableScrollReveal) return;
         if (prefersReducedMotion || !('IntersectionObserver' in window)) return;
 
         const selector = '.ui-card, .tool-card, .trust-item, .tool-category, .ui-panel, .ui-empty-state';
