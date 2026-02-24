@@ -216,21 +216,62 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       };
 
       const setupGroupedNavHoverMenus = () => {
-        const groups = Array.from(document.querySelectorAll('.nav-group'));
+        const groups = Array.from(document.querySelectorAll('.nav-group')).filter(
+          (node) => node instanceof HTMLElement
+        );
         if (!groups.length) return;
 
-        for (const group of groups) {
-          if (!(group instanceof HTMLElement)) continue;
+        const mobileNavMedia = window.matchMedia('(max-width: 640px)');
 
+        const setMobileOpen = (group, isOpen) => {
+          group.classList.toggle('is-mobile-open', isOpen);
+
+          const trigger = group.querySelector('.nav-group-trigger');
+          if (trigger instanceof HTMLButtonElement) {
+            trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          }
+        };
+
+        const closeAllMobileMenus = (exception = null) => {
+          for (const group of groups) {
+            if (group === exception) continue;
+            setMobileOpen(group, false);
+          }
+        };
+
+        const syncGroupedNavState = () => {
+          if (!mobileNavMedia.matches) {
+            for (const group of groups) {
+              group.classList.remove('is-hover-open');
+              setMobileOpen(group, false);
+            }
+            return;
+          }
+
+          const activeGroup = groups.find((group) => group.classList.contains('nav-group--active'));
+          if (activeGroup && !groups.some((group) => group.classList.contains('is-mobile-open'))) {
+            setMobileOpen(activeGroup, true);
+          } else {
+            for (const group of groups) {
+              const isOpen = group.classList.contains('is-mobile-open');
+              setMobileOpen(group, isOpen);
+            }
+          }
+        };
+
+        for (const group of groups) {
           const menu = group.querySelector('.nav-menu');
+          const trigger = group.querySelector('.nav-group-trigger');
           let closeTimer = 0;
 
           const open = () => {
+            if (mobileNavMedia.matches) return;
             window.clearTimeout(closeTimer);
             group.classList.add('is-hover-open');
           };
 
           const closeSoon = () => {
+            if (mobileNavMedia.matches) return;
             window.clearTimeout(closeTimer);
             closeTimer = window.setTimeout(() => {
               group.classList.remove('is-hover-open');
@@ -244,7 +285,94 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
             menu.addEventListener('mouseenter', open);
             menu.addEventListener('mouseleave', closeSoon);
           }
+
+          if (trigger instanceof HTMLButtonElement) {
+            trigger.addEventListener('click', () => {
+              if (!mobileNavMedia.matches) return;
+
+              const willOpen = !group.classList.contains('is-mobile-open');
+              closeAllMobileMenus(willOpen ? group : null);
+              setMobileOpen(group, willOpen);
+            });
+          }
         }
+
+        if (typeof mobileNavMedia.addEventListener === 'function') {
+          mobileNavMedia.addEventListener('change', syncGroupedNavState);
+        } else if (typeof mobileNavMedia.addListener === 'function') {
+          mobileNavMedia.addListener(syncGroupedNavState);
+        }
+
+        syncGroupedNavState();
+      };
+
+      const setupMobileNavDrawer = () => {
+        const nav = document.querySelector('[data-mobile-nav]');
+        const toggles = Array.from(document.querySelectorAll('[data-mobile-nav-toggle]'));
+        const backdrop = document.querySelector('[data-mobile-nav-backdrop]');
+        if (!(nav instanceof HTMLElement) || !(backdrop instanceof HTMLElement) || !toggles.length) return;
+
+        const mobileNavMedia = window.matchMedia('(max-width: 640px)');
+        let isOpen = false;
+
+        const setMobileNavOpen = (nextOpen) => {
+          const shouldOpen = mobileNavMedia.matches && nextOpen;
+          isOpen = shouldOpen;
+
+          document.body.classList.toggle('mobile-nav-open', shouldOpen);
+
+          for (const toggle of toggles) {
+            if (!(toggle instanceof HTMLButtonElement)) continue;
+            toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            toggle.setAttribute('aria-label', shouldOpen ? 'Close navigation menu' : 'Open navigation menu');
+            toggle.setAttribute('title', shouldOpen ? 'Close navigation menu' : 'Open navigation menu');
+          }
+        };
+
+        const closeMobileNav = () => setMobileNavOpen(false);
+
+        for (const toggle of toggles) {
+          if (!(toggle instanceof HTMLButtonElement)) continue;
+
+          toggle.addEventListener('click', () => {
+            setMobileNavOpen(!isOpen);
+          });
+        }
+
+        backdrop.addEventListener('click', closeMobileNav);
+
+        nav.addEventListener('click', (event) => {
+          if (!mobileNavMedia.matches) return;
+
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+
+          const clickedLink = target.closest('a[href]');
+          if (clickedLink instanceof HTMLAnchorElement) {
+            closeMobileNav();
+          }
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key !== 'Escape' || !isOpen) return;
+          closeMobileNav();
+        });
+
+        const syncMobileNavForViewport = () => {
+          if (!mobileNavMedia.matches) {
+            closeMobileNav();
+          } else {
+            setMobileNavOpen(isOpen);
+          }
+        };
+
+        if (typeof mobileNavMedia.addEventListener === 'function') {
+          mobileNavMedia.addEventListener('change', syncMobileNavForViewport);
+        } else if (typeof mobileNavMedia.addListener === 'function') {
+          mobileNavMedia.addListener(syncMobileNavForViewport);
+        }
+
+        setMobileNavOpen(false);
       };
 
       if (document.readyState === 'loading') {
@@ -253,12 +381,14 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
           setupSamePageAnchorScroll();
           setupPageTransitions();
           setupGroupedNavHoverMenus();
+          setupMobileNavDrawer();
         });
       } else {
         setupScrollReveal();
         setupSamePageAnchorScroll();
         setupPageTransitions();
         setupGroupedNavHoverMenus();
+        setupMobileNavDrawer();
       }
     </script>
     <script is:inline define:vars={{ ldClientId }}>
@@ -285,7 +415,8 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
         ImageNoBackground,
         Eyedropper,
         PlusMinus,
-        TableLayout
+        TableLayout,
+        XCircle
       } from '@boxicons/js';
       import { configureFeatureFlags, primeFeatureFlags } from '../lib/feature-flags';
 
@@ -307,7 +438,8 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
             ImageNoBackground,
             Eyedropper,
             PlusMinus,
-            TableLayout
+            TableLayout,
+            XCircle
           }
         });
       };
@@ -334,7 +466,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
         <div class="ui-page site-header-inner">
           <a href="/" class="brand">toolbelt.sh</a>
 
-          <nav class="site-nav" aria-label="Primary">
+          <nav id="site-primary-nav" class="site-nav" aria-label="Primary" data-mobile-nav>
             {
               coreNavItems.map((item) => (
                 <a
@@ -347,14 +479,20 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
             }
 
             {
-              toolSections.map((section) => (
+              toolSections.map((section, index) => (
                 <div class={`nav-group ${isSectionActive(section) ? 'nav-group--active' : ''}`.trim()}>
-                  <span class="nav-group-trigger">
+                  <button
+                    class="nav-group-trigger"
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    aria-controls={`nav-menu-${index}`}
+                  >
                     {section.title}
                     <span class="nav-caret" aria-hidden="true">▾</span>
-                  </span>
+                  </button>
 
-                  <div class="nav-menu" role="menu" aria-label={`${section.title} tools`}>
+                  <div id={`nav-menu-${index}`} class="nav-menu" role="menu" aria-label={`${section.title} tools`}>
                     {section.tools.map((tool) => (
                       <a
                         href={tool.href}
@@ -377,6 +515,21 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
           </nav>
 
           <div class="header-actions">
+            <button
+              class="mobile-nav-toggle"
+              type="button"
+              data-mobile-nav-toggle
+              aria-controls="site-primary-nav"
+              aria-expanded="false"
+              aria-label="Open navigation menu"
+              title="Open navigation menu"
+            >
+              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+              <i class="mobile-nav-close-icon" data-bx="x-circle" aria-hidden="true"></i>
+            </button>
+
             <button class="theme-toggle" type="button" data-mode-toggle aria-label="Toggle theme">
               <i class="icon icon-moon" data-bx="moon" aria-hidden="true"></i>
               <i class="icon icon-sun" data-bx="sun" aria-hidden="true"></i>
@@ -389,6 +542,13 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
           </div>
         </div>
       </header>
+      <button
+        class="mobile-nav-backdrop"
+        type="button"
+        data-mobile-nav-backdrop
+        aria-label="Close navigation menu"
+        tabindex="-1"
+      ></button>
 
       <slot />
     </div>
@@ -500,7 +660,11 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     display: inline-flex;
     align-items: center;
     gap: 0.32rem;
+    appearance: none;
+    background: none;
+    cursor: pointer;
     font-family: var(--font-sans);
+    line-height: 1.2;
   }
 
   .nav-group--active .nav-group-trigger {
@@ -625,6 +789,58 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     gap: 0.52rem;
   }
 
+  .mobile-nav-toggle {
+    display: none;
+    width: 2.35rem;
+    height: 2.35rem;
+    position: relative;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    color: var(--text-primary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.18rem;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+  }
+
+  .mobile-nav-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border-default));
+    transform: translateY(-1px);
+  }
+
+  .mobile-nav-toggle-bar {
+    width: 0.95rem;
+    height: 1.5px;
+    border-radius: 999px;
+    background: currentColor;
+    transition: transform 160ms ease, opacity 160ms ease;
+  }
+
+  :global(svg.mobile-nav-close-icon) {
+    width: 1.05rem;
+    height: 1.05rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.82);
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+
+  :global(body.mobile-nav-open) .mobile-nav-toggle-bar {
+    opacity: 0;
+    transform: scaleX(0.72);
+  }
+
+  :global(body.mobile-nav-open svg.mobile-nav-close-icon) {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
   .theme-toggle {
     width: 2.35rem;
     height: 2.35rem;
@@ -714,6 +930,10 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     pointer-events: none;
   }
 
+  .mobile-nav-backdrop {
+    display: none;
+  }
+
   :global(.reveal-on-scroll) {
     opacity: 0;
     transform: translate3d(0, 10px, 0) scale(0.996);
@@ -788,14 +1008,114 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
   }
 
   @media (max-width: 640px) {
+    :global(body.mobile-nav-open) .site-header {
+      z-index: 100;
+    }
+
+    .site-header {
+      padding-top: var(--space-md);
+      padding-bottom: var(--space-sm);
+    }
+
+    .site-header-inner {
+      flex-wrap: nowrap;
+      gap: var(--space-sm);
+      margin-inline: var(--space-md);
+      padding: 0.6rem;
+      overflow: visible;
+    }
+
+    .brand {
+      padding-inline: 0.3rem;
+      font-size: 0.95rem;
+    }
+
+    .header-actions {
+      margin-left: auto;
+      gap: 0.42rem;
+    }
+
+    .mobile-nav-toggle {
+      display: inline-flex;
+    }
+
     .site-nav {
-      gap: 0.22rem;
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      left: 0;
+      width: min(84vw, 21.5rem);
+      max-width: 100%;
+      margin-right: 0;
+      max-height: calc(100dvh - 6rem);
+      padding: 0.75rem;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-default));
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--bg-surface) 96%, transparent);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-md);
+      display: grid;
+      align-content: start;
+      align-items: stretch;
+      gap: 0.42rem;
+      row-gap: 0.42rem;
+      overflow-y: auto;
+      z-index: 110;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(calc(-100% - 0.8rem));
+      transition:
+        opacity var(--transition-fast),
+        transform 190ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility var(--transition-fast);
+    }
+
+    :global(body.mobile-nav-open) .site-nav {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .mobile-nav-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: 80;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    }
+
+    :global(body.mobile-nav-open) .mobile-nav-backdrop {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    :global(body.mobile-nav-open) {
+      overflow: hidden;
     }
 
     .nav-link,
     .nav-group-trigger {
       font-size: 0.76rem;
-      padding: 0.28rem 0.54rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: var(--radius-sm);
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
     }
 
     .nav-group {
@@ -804,14 +1124,35 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       margin-bottom: 0;
     }
 
+    .nav-group-trigger {
+      text-align: left;
+    }
+
     .nav-group::after {
       display: none;
     }
 
     .nav-menu {
+      display: none;
       position: static;
-      margin-top: 0.36rem;
+      min-width: 0;
+      margin-top: 0.24rem;
       max-width: none;
+      padding: 0.34rem;
+      box-shadow: none;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .nav-group.is-mobile-open .nav-menu {
+      display: grid;
+    }
+
+    .nav-group.is-mobile-open .nav-caret {
+      transform: translateY(1px) rotate(180deg);
+      color: var(--text-primary);
     }
 
     .github-link span {
