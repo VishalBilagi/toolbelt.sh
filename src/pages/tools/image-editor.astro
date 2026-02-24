@@ -14,7 +14,7 @@ import Select from '../../components/ui/Select.astro';
       <div class="ui-card__header">
         <div>
           <h2 class="ui-card__title">Live Preview & Crop</h2>
-          <p class="ui-card__description">Drag the crop box directly on the image, then rotate, flip, resize, and export.</p>
+          <p class="ui-card__description">Drag on the image to draw a crop area, then rotate, flip, resize, and export.</p>
         </div>
         <Badge tone="neutral">Client-side</Badge>
       </div>
@@ -26,11 +26,15 @@ import Select from '../../components/ui/Select.astro';
       <div class="preview-grid">
         <section>
           <div class="preview-heading">
-            <h3>Original (Interactive crop)</h3>
+            <h3>Original (Draw crop on image)</h3>
             <p id="before-meta" class="meta-text">-</p>
           </div>
-          <div id="crop-stage" class="crop-stage" aria-label="Crop stage">
+          <div id="crop-stage" class="crop-stage" aria-label="Crop preview. Drag on the image to draw a crop selection.">
             <canvas id="before-canvas"></canvas>
+            <div id="crop-mask-top" class="crop-mask" hidden></div>
+            <div id="crop-mask-left" class="crop-mask" hidden></div>
+            <div id="crop-mask-right" class="crop-mask" hidden></div>
+            <div id="crop-mask-bottom" class="crop-mask" hidden></div>
             <div id="crop-overlay" class="crop-overlay" hidden>
               <span class="crop-label">Crop</span>
               <button id="crop-resize-handle" class="crop-handle" type="button" aria-label="Resize crop selection"></button>
@@ -47,7 +51,7 @@ import Select from '../../components/ui/Select.astro';
         </section>
       </div>
 
-      <p class="meta-text">Tip: Drag inside the crop box to move it. Drag the bottom-right handle to resize.</p>
+      <p class="meta-text">Tip: Drag on the image to create a crop selection. Drag the crop box to move it, use the handle to resize, or fine tune values below.</p>
     </Card>
 
     <Card interactive={false}>
@@ -59,8 +63,9 @@ import Select from '../../components/ui/Select.astro';
       </div>
 
       <div class="section-block">
-        <div class="section-heading">
+        <div class="section-heading section-heading--split">
           <h3>Fine tune crop (optional)</h3>
+          <Button id="reset-crop" variant="ghost" size="sm">Reset Crop</Button>
         </div>
         <div class="field-grid two-col">
           <Field label="X" htmlFor="crop-x"><Input id="crop-x" type="number" min="0" step="1" value="0" /></Field>
@@ -152,6 +157,7 @@ import Select from '../../components/ui/Select.astro';
   .crop-stage {
     margin-top: var(--space-sm);
     position: relative;
+    isolation: isolate;
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -170,6 +176,11 @@ import Select from '../../components/ui/Select.astro';
     display: block;
   }
 
+  #before-canvas {
+    cursor: crosshair;
+    touch-action: none;
+  }
+
   #after-canvas {
     margin-top: var(--space-sm);
     width: 100%;
@@ -178,11 +189,20 @@ import Select from '../../components/ui/Select.astro';
 
   .crop-overlay {
     position: absolute;
+    z-index: 2;
     border: 2px solid var(--accent-500);
-    background: color-mix(in srgb, var(--accent-500) 12%, transparent);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-500) 35%, transparent);
     cursor: move;
     box-sizing: border-box;
     touch-action: none;
+  }
+
+  .crop-mask {
+    position: absolute;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.58);
+    pointer-events: none;
   }
 
   .crop-label {
@@ -198,18 +218,27 @@ import Select from '../../components/ui/Select.astro';
     border-bottom: none;
     padding: 0.05rem 0.3rem;
     border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+    pointer-events: none;
   }
 
   .crop-handle {
     position: absolute;
-    right: -7px;
-    bottom: -7px;
-    width: 14px;
-    height: 14px;
+    right: -11px;
+    bottom: -11px;
+    width: 22px;
+    height: 22px;
     border: 2px solid var(--accent-500);
     background: var(--bg-surface);
     border-radius: 50%;
     cursor: nwse-resize;
+    touch-action: none;
+  }
+
+  .section-heading--split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
   }
 
   .section-block {
@@ -281,10 +310,15 @@ import Select from '../../components/ui/Select.astro';
   const cropStage = document.getElementById('crop-stage');
   const cropOverlay = document.getElementById('crop-overlay') as HTMLElement | null;
   const cropResizeHandle = document.getElementById('crop-resize-handle');
+  const cropMaskTop = document.getElementById('crop-mask-top') as HTMLElement | null;
+  const cropMaskLeft = document.getElementById('crop-mask-left') as HTMLElement | null;
+  const cropMaskRight = document.getElementById('crop-mask-right') as HTMLElement | null;
+  const cropMaskBottom = document.getElementById('crop-mask-bottom') as HTMLElement | null;
   const cropX = document.getElementById('crop-x') as HTMLInputElement | null;
   const cropY = document.getElementById('crop-y') as HTMLInputElement | null;
   const cropWidth = document.getElementById('crop-width') as HTMLInputElement | null;
   const cropHeight = document.getElementById('crop-height') as HTMLInputElement | null;
+  const resetCropBtn = document.getElementById('reset-crop');
   const outputWidth = document.getElementById('output-width') as HTMLInputElement | null;
   const outputHeight = document.getElementById('output-height') as HTMLInputElement | null;
   const aspectLock = document.getElementById('aspect-lock') as HTMLInputElement | null;
@@ -377,19 +411,131 @@ import Select from '../../components/ui/Select.astro';
     if (cropHeight) cropHeight.value = String(cropRect.height);
   };
 
+  const getClientToSourceScale = (): { x: number; y: number } => {
+    if (!beforeCanvas || !sourceBitmap) {
+      return { x: renderMetrics.scaleX, y: renderMetrics.scaleY };
+    }
+
+    const rect = beforeCanvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return { x: renderMetrics.scaleX, y: renderMetrics.scaleY };
+    }
+
+    return {
+      x: sourceBitmap.width / rect.width,
+      y: sourceBitmap.height / rect.height
+    };
+  };
+
   const syncCropOverlay = () => {
     if (!cropOverlay || !sourceBitmap) return;
 
-    const left = Math.round(cropRect.x / renderMetrics.scaleX);
-    const top = Math.round(cropRect.y / renderMetrics.scaleY);
-    const width = Math.max(20, Math.round(cropRect.width / renderMetrics.scaleX));
-    const height = Math.max(20, Math.round(cropRect.height / renderMetrics.scaleY));
+    const canvasOffsetLeft = beforeCanvas?.offsetLeft ?? 0;
+    const canvasOffsetTop = beforeCanvas?.offsetTop ?? 0;
+    const canvasDisplayWidth = beforeCanvas?.offsetWidth ?? renderMetrics.displayWidth;
+    const canvasDisplayHeight = beforeCanvas?.offsetHeight ?? renderMetrics.displayHeight;
+    const previewScale = getClientToSourceScale();
 
-    cropOverlay.style.left = `${left}px`;
-    cropOverlay.style.top = `${top}px`;
+    const left = Math.round(cropRect.x / previewScale.x);
+    const top = Math.round(cropRect.y / previewScale.y);
+    const width = Math.max(1, Math.round(cropRect.width / previewScale.x));
+    const height = Math.max(1, Math.round(cropRect.height / previewScale.y));
+    const isFullCrop =
+      cropRect.x === 0 &&
+      cropRect.y === 0 &&
+      cropRect.width === sourceBitmap.width &&
+      cropRect.height === sourceBitmap.height;
+
+    cropOverlay.style.left = `${canvasOffsetLeft + left}px`;
+    cropOverlay.style.top = `${canvasOffsetTop + top}px`;
     cropOverlay.style.width = `${width}px`;
     cropOverlay.style.height = `${height}px`;
+    cropOverlay.style.pointerEvents = isFullCrop ? 'none' : 'auto';
     cropOverlay.hidden = false;
+
+    const syncMaskPanel = (
+      node: HTMLElement | null,
+      panelLeft: number,
+      panelTop: number,
+      panelWidth: number,
+      panelHeight: number
+    ) => {
+      if (!node) return;
+
+      const safeWidth = Math.max(0, Math.round(panelWidth));
+      const safeHeight = Math.max(0, Math.round(panelHeight));
+      node.style.left = `${Math.round(panelLeft)}px`;
+      node.style.top = `${Math.round(panelTop)}px`;
+      node.style.width = `${safeWidth}px`;
+      node.style.height = `${safeHeight}px`;
+      node.hidden = isFullCrop || safeWidth === 0 || safeHeight === 0;
+    };
+
+    syncMaskPanel(cropMaskTop, canvasOffsetLeft, canvasOffsetTop, canvasDisplayWidth, top);
+    syncMaskPanel(cropMaskLeft, canvasOffsetLeft, canvasOffsetTop + top, left, height);
+    syncMaskPanel(
+      cropMaskRight,
+      canvasOffsetLeft + left + width,
+      canvasOffsetTop + top,
+      Math.max(0, canvasDisplayWidth - (left + width)),
+      height
+    );
+    syncMaskPanel(
+      cropMaskBottom,
+      canvasOffsetLeft,
+      canvasOffsetTop + top + height,
+      canvasDisplayWidth,
+      Math.max(0, canvasDisplayHeight - (top + height))
+    );
+  };
+
+  const getSourcePointFromPreview = (
+    event: PointerEvent,
+    clampToBounds: boolean
+  ): { x: number; y: number } | null => {
+    if (!beforeCanvas || !sourceBitmap) return null;
+
+    const rect = beforeCanvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+
+    let localX = event.clientX - rect.left;
+    let localY = event.clientY - rect.top;
+
+    if (!clampToBounds && (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height)) {
+      return null;
+    }
+
+    localX = Math.max(0, Math.min(localX, rect.width));
+    localY = Math.max(0, Math.min(localY, rect.height));
+
+    return {
+      x: Math.round((localX / rect.width) * sourceBitmap.width),
+      y: Math.round((localY / rect.height) * sourceBitmap.height)
+    };
+  };
+
+  const buildCropRectFromPoints = (
+    start: { x: number; y: number },
+    end: { x: number; y: number }
+  ): CropRect => {
+    if (!sourceBitmap) return cropRect;
+
+    const maxWidth = sourceBitmap.width;
+    const maxHeight = sourceBitmap.height;
+
+    const left = Math.max(0, Math.min(start.x, end.x));
+    const top = Math.max(0, Math.min(start.y, end.y));
+    const right = Math.max(0, Math.min(maxWidth, Math.max(start.x, end.x)));
+    const bottom = Math.max(0, Math.min(maxHeight, Math.max(start.y, end.y)));
+    const width = Math.max(1, right - left);
+    const height = Math.max(1, bottom - top);
+
+    return {
+      x: Math.max(0, Math.min(left, maxWidth - width)),
+      y: Math.max(0, Math.min(top, maxHeight - height)),
+      width,
+      height
+    };
   };
 
   const renderEditedCanvas = async () => {
@@ -508,10 +654,13 @@ import Select from '../../components/ui/Select.astro';
       sourceBitmap = await createImageBitmap(file);
       await resetForImage();
       if (beforeMeta) beforeMeta.textContent = `Source: ${sourceBitmap.width}x${sourceBitmap.height}px`;
-      setStatus('Image loaded. Drag crop on the preview and export when ready.');
+      setStatus('Image loaded. Drag on the preview image to draw a crop selection.');
     } catch (error) {
       sourceBitmap = null;
       if (cropOverlay) cropOverlay.hidden = true;
+      [cropMaskTop, cropMaskLeft, cropMaskRight, cropMaskBottom].forEach((node) => {
+        if (node) node.hidden = true;
+      });
       setStatus(`Could not read image: ${(error as Error).message}`);
     }
   });
@@ -545,6 +694,62 @@ import Select from '../../components/ui/Select.astro';
     });
   });
 
+  beforeCanvas?.addEventListener('pointerdown', (event) => {
+    if (!sourceBitmap) return;
+    if (event.button !== 0) return;
+
+    const startPoint = getSourcePointFromPreview(event, false);
+    if (!startPoint) return;
+
+    event.preventDefault();
+
+    const activePointerId = event.pointerId;
+    const startRect = { ...cropRect };
+    let changed = false;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== activePointerId) return;
+
+      const currentPoint = getSourcePointFromPreview(moveEvent, true);
+      if (!currentPoint) return;
+
+      const nextRect = buildCropRectFromPoints(startPoint, currentPoint);
+      if (
+        nextRect.x !== startRect.x ||
+        nextRect.y !== startRect.y ||
+        nextRect.width !== startRect.width ||
+        nextRect.height !== startRect.height
+      ) {
+        changed = true;
+      }
+
+      cropRect = nextRect;
+      syncCropInputs();
+      syncCropOverlay();
+    };
+
+    const onEnd = async (endEvent: PointerEvent) => {
+      if (endEvent.pointerId !== activePointerId) return;
+
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+
+      if (!changed) {
+        cropRect = startRect;
+        syncCropInputs();
+        syncCropOverlay();
+        return;
+      }
+
+      await renderEditedCanvas();
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+  });
+
   const attachPointerDrag = (target: HTMLElement | null, mode: 'move' | 'resize') => {
     target?.addEventListener('pointerdown', async (event) => {
       if (!sourceBitmap || !cropOverlay) return;
@@ -555,10 +760,11 @@ import Select from '../../components/ui/Select.astro';
       const startX = event.clientX;
       const startY = event.clientY;
       const startRect = { ...cropRect };
+      const previewScale = getClientToSourceScale();
 
       const onMove = (moveEvent: PointerEvent) => {
-        const deltaX = Math.round((moveEvent.clientX - startX) * renderMetrics.scaleX);
-        const deltaY = Math.round((moveEvent.clientY - startY) * renderMetrics.scaleY);
+        const deltaX = Math.round((moveEvent.clientX - startX) * previewScale.x);
+        const deltaY = Math.round((moveEvent.clientY - startY) * previewScale.y);
 
         if (mode === 'move') {
           cropRect = logic.normalizeCropRect(
@@ -599,6 +805,24 @@ import Select from '../../components/ui/Select.astro';
 
   attachPointerDrag(cropOverlay, 'move');
   attachPointerDrag(cropResizeHandle as HTMLElement | null, 'resize');
+
+  resetCropBtn?.addEventListener('click', async () => {
+    if (!sourceBitmap) {
+      setStatus('Upload an image first.');
+      return;
+    }
+
+    cropRect = {
+      x: 0,
+      y: 0,
+      width: sourceBitmap.width,
+      height: sourceBitmap.height
+    };
+
+    syncCropInputs();
+    await rerender();
+    setStatus('Crop reset to full image.');
+  });
 
   rotateLeft?.addEventListener('click', async () => {
     state.rotation -= 90;
