@@ -1,4 +1,4 @@
-export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock';
+export type ToolIcon = 'qr' | 'crop' | 'svg' | 'data' | 'lock' | 'clock';
 
 export interface ToolEntry {
   name: string;
@@ -59,6 +59,13 @@ export const toolSections: ToolSection[] = [
         description: 'Base64, URL/query editing, and JWT claim decoding utilities.',
         tags: ['base64', 'url', 'query', 'jwt', 'decode'],
         icon: 'data'
+      },
+      {
+        name: 'Epoch Converter',
+        href: '/tools/epoch',
+        description: 'Convert epoch timestamps and ISO date/time values across precisions.',
+        tags: ['epoch', 'timestamp', 'unix', 'timezone', 'date'],
+        icon: 'clock'
       },
       {
         name: 'Data Utilities',

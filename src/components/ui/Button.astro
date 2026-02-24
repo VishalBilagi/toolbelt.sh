@@ -22,7 +22,8 @@ const {
   type = 'button',
   disabled = false,
   fullWidth = false,
-  class: className = ''
+  class: className = '',
+  ...rest
 } = Astro.props;
 
 const classes = [
@@ -38,11 +39,11 @@ const classes = [
 
 {
   href ? (
-    <a id={id} href={disabled ? undefined : href} target={target} rel={rel} aria-disabled={disabled ? 'true' : undefined} class={classes}>
+    <a id={id} href={disabled ? undefined : href} target={target} rel={rel} aria-disabled={disabled ? 'true' : undefined} class={classes} {...rest}>
       <slot />
     </a>
   ) : (
-    <button id={id} type={type} disabled={disabled} class={classes}>
+    <button id={id} type={type} disabled={disabled} class={classes} {...rest}>
       <slot />
     </button>
   )
