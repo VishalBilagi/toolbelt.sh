@@ -1,0 +1,363 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+---
+
+<ToolLayout title="Epoch Converter">
+  <section class="tool-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Epoch → Date</h2>
+          <p class="ui-card__description">Convert epoch timestamps to local, UTC, and ISO date output.</p>
+        </div>
+        <Badge tone="neutral">Client-side</Badge>
+      </div>
+
+      <div class="row">
+        <Field label="Epoch value" htmlFor="epoch-input">
+          <Input id="epoch-input" type="text" placeholder="1708535665123" autocomplete="off" />
+        </Field>
+        <Field label="Epoch unit" htmlFor="epoch-unit">
+          <Select id="epoch-unit">
+            <option value="auto">Auto-detect</option>
+            <option value="seconds">Seconds</option>
+            <option value="milliseconds">Milliseconds</option>
+            <option value="microseconds">Microseconds</option>
+            <option value="nanoseconds">Nanoseconds</option>
+          </Select>
+        </Field>
+      </div>
+
+      <div class="actions">
+        <Button id="epoch-now" variant="secondary">Now</Button>
+      </div>
+
+      <p id="epoch-message" class="meta" aria-live="polite"></p>
+      <p id="epoch-error" class="error" aria-live="polite"></p>
+
+      <div class="output-grid">
+        <div class="output-item">
+          <h3>Local time</h3>
+          <pre id="epoch-local" class="output"></pre>
+          <Button data-copy-target="epoch-local" variant="ghost">Copy</Button>
+        </div>
+        <div class="output-item">
+          <h3>UTC time</h3>
+          <pre id="epoch-utc" class="output"></pre>
+          <Button data-copy-target="epoch-utc" variant="ghost">Copy</Button>
+        </div>
+        <div class="output-item">
+          <h3>ISO 8601</h3>
+          <pre id="epoch-iso" class="output"></pre>
+          <Button data-copy-target="epoch-iso" variant="ghost">Copy</Button>
+        </div>
+      </div>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Date → Epoch</h2>
+          <p class="ui-card__description">Parse ISO or datetime input and output all epoch units.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <Field label="Date/time input" htmlFor="date-input" hint="Examples: 2026-02-24T17:00:00Z, 2026-02-24T12:00:00-05:00">
+          <Input id="date-input" type="text" placeholder="2026-02-24T17:00:00Z" autocomplete="off" />
+        </Field>
+        <Field label="Interpret no-offset input as" htmlFor="date-mode">
+          <Select id="date-mode">
+            <option value="local">Local timezone</option>
+            <option value="utc">UTC</option>
+          </Select>
+        </Field>
+      </div>
+
+      <div class="actions">
+        <Button id="date-now" variant="secondary">Now</Button>
+      </div>
+
+      <p id="date-error" class="error" aria-live="polite"></p>
+
+      <div class="output-grid">
+        <div class="output-item">
+          <h3>Epoch seconds</h3>
+          <pre id="date-seconds" class="output"></pre>
+          <Button data-copy-target="date-seconds" variant="ghost">Copy</Button>
+        </div>
+        <div class="output-item">
+          <h3>Epoch milliseconds</h3>
+          <pre id="date-milliseconds" class="output"></pre>
+          <Button data-copy-target="date-milliseconds" variant="ghost">Copy</Button>
+        </div>
+        <div class="output-item">
+          <h3>Epoch microseconds</h3>
+          <pre id="date-microseconds" class="output"></pre>
+          <Button data-copy-target="date-microseconds" variant="ghost">Copy</Button>
+        </div>
+        <div class="output-item">
+          <h3>Epoch nanoseconds</h3>
+          <pre id="date-nanoseconds" class="output"></pre>
+          <Button data-copy-target="date-nanoseconds" variant="ghost">Copy</Button>
+        </div>
+      </div>
+    </Card>
+  </section>
+
+  <p id="copy-status" class="meta" aria-live="polite"></p>
+</ToolLayout>
+
+<style>
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .actions {
+    margin-top: var(--space-sm);
+  }
+
+  .output-grid {
+    margin-top: var(--space-md);
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .output-item {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+  }
+
+  .output-item h3 {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  .output {
+    margin: 0;
+    min-height: 3rem;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-inset) 82%, transparent);
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+  }
+
+  .meta {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+    min-height: 1.25rem;
+  }
+
+  .error {
+    margin-top: var(--space-sm);
+    color: var(--state-danger);
+    min-height: 1.25rem;
+  }
+</style>
+
+<script>
+  type EpochUnit = 'seconds' | 'milliseconds' | 'microseconds' | 'nanoseconds';
+
+  const epochInput = document.getElementById('epoch-input') as HTMLInputElement | null;
+  const epochUnit = document.getElementById('epoch-unit') as HTMLSelectElement | null;
+  const epochMessage = document.getElementById('epoch-message');
+  const epochError = document.getElementById('epoch-error');
+  const epochLocal = document.getElementById('epoch-local');
+  const epochUtc = document.getElementById('epoch-utc');
+  const epochIso = document.getElementById('epoch-iso');
+
+  const dateInput = document.getElementById('date-input') as HTMLInputElement | null;
+  const dateMode = document.getElementById('date-mode') as HTMLSelectElement | null;
+  const dateError = document.getElementById('date-error');
+  const dateSeconds = document.getElementById('date-seconds');
+  const dateMilliseconds = document.getElementById('date-milliseconds');
+  const dateMicroseconds = document.getElementById('date-microseconds');
+  const dateNanoseconds = document.getElementById('date-nanoseconds');
+  const copyStatus = document.getElementById('copy-status');
+
+  let logic: typeof import('../../tools/epoch/logic') | null = null;
+  let epochTimer: ReturnType<typeof setTimeout> | null = null;
+  let dateTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const getLogic = async () => {
+    if (!logic) {
+      logic = await import('../../tools/epoch/logic');
+    }
+
+    return logic;
+  };
+
+  const setText = (node: HTMLElement | null, value: string): void => {
+    if (node) node.textContent = value;
+  };
+
+  const clearEpochOutputs = (): void => {
+    setText(epochLocal, '');
+    setText(epochUtc, '');
+    setText(epochIso, '');
+  };
+
+  const clearDateOutputs = (): void => {
+    setText(dateSeconds, '');
+    setText(dateMilliseconds, '');
+    setText(dateMicroseconds, '');
+    setText(dateNanoseconds, '');
+  };
+
+  const convertEpoch = async (): Promise<void> => {
+    const input = epochInput?.value ?? '';
+    const selectedUnit = epochUnit?.value ?? 'auto';
+
+    setText(epochError, '');
+    setText(epochMessage, '');
+
+    if (!input.trim()) {
+      clearEpochOutputs();
+      return;
+    }
+
+    try {
+      const epochLogic = await getLogic();
+      const parsed = epochLogic.parseEpochInteger(input);
+
+      let unit: EpochUnit;
+      if (selectedUnit === 'auto') {
+        const detected = epochLogic.detectEpochUnit(parsed);
+
+        if (detected.ambiguous || !detected.unit) {
+          clearEpochOutputs();
+          setText(epochMessage, `Ambiguous input. ${detected.reason} Please select a unit.`);
+          return;
+        }
+
+        unit = detected.unit;
+        setText(epochMessage, `Detected unit: ${unit}. ${detected.reason}`);
+      } else {
+        unit = selectedUnit as EpochUnit;
+      }
+
+      const converted = epochLogic.epochToDate(parsed, unit);
+      setText(epochLocal, `${epochLogic.formatLocalDisplay(converted.date)} (Local)`);
+      setText(epochUtc, `${epochLogic.formatUtcDisplay(converted.date)} (UTC)`);
+      setText(epochIso, converted.date.toISOString());
+
+      if (converted.truncatedToMilliseconds) {
+        setText(epochMessage, 'Displayed output is truncated to millisecond precision.');
+      }
+    } catch (error) {
+      clearEpochOutputs();
+      setText(epochError, error instanceof Error ? error.message : 'Could not convert epoch input.');
+    }
+  };
+
+  const convertDate = async (): Promise<void> => {
+    const input = dateInput?.value ?? '';
+
+    setText(dateError, '');
+
+    if (!input.trim()) {
+      clearDateOutputs();
+      return;
+    }
+
+    try {
+      const epochLogic = await getLogic();
+      const parsedDate = epochLogic.parseDateInput(input, (dateMode?.value ?? 'local') as 'local' | 'utc');
+      const epochValues = epochLogic.dateToEpochValues(parsedDate);
+
+      setText(dateSeconds, epochValues.seconds);
+      setText(dateMilliseconds, epochValues.milliseconds);
+      setText(dateMicroseconds, epochValues.microseconds);
+      setText(dateNanoseconds, epochValues.nanoseconds);
+    } catch (error) {
+      clearDateOutputs();
+      setText(dateError, error instanceof Error ? error.message : 'Could not parse date input.');
+    }
+  };
+
+  const debounceEpochConvert = (): void => {
+    if (epochTimer) clearTimeout(epochTimer);
+    epochTimer = setTimeout(() => {
+      void convertEpoch();
+    }, 220);
+  };
+
+  const debounceDateConvert = (): void => {
+    if (dateTimer) clearTimeout(dateTimer);
+    dateTimer = setTimeout(() => {
+      void convertDate();
+    }, 220);
+  };
+
+  epochInput?.addEventListener('input', debounceEpochConvert);
+  epochUnit?.addEventListener('change', () => {
+    void convertEpoch();
+  });
+
+  dateInput?.addEventListener('input', debounceDateConvert);
+  dateMode?.addEventListener('change', () => {
+    void convertDate();
+  });
+
+  document.getElementById('epoch-now')?.addEventListener('click', async () => {
+    const unit = (epochUnit?.value ?? 'milliseconds') as 'auto' | EpochUnit;
+    const nowMs = Date.now();
+    const asBigInt = BigInt(nowMs);
+
+    const valueByUnit: Record<EpochUnit, string> = {
+      seconds: (asBigInt / 1_000n).toString(),
+      milliseconds: asBigInt.toString(),
+      microseconds: (asBigInt * 1_000n).toString(),
+      nanoseconds: (asBigInt * 1_000_000n).toString()
+    };
+
+    epochInput!.value = valueByUnit[unit === 'auto' ? 'milliseconds' : unit];
+    if (unit === 'auto' && epochUnit) {
+      epochUnit.value = 'milliseconds';
+    }
+
+    await convertEpoch();
+  });
+
+  document.getElementById('date-now')?.addEventListener('click', async () => {
+    dateInput!.value = new Date().toISOString();
+    await convertDate();
+  });
+
+  document.querySelectorAll('[data-copy-target]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const targetId = button.getAttribute('data-copy-target');
+      if (!targetId) return;
+
+      const source = document.getElementById(targetId);
+      const text = source?.textContent?.trim();
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        setText(copyStatus, `Copied ${targetId.replace('date-', '').replace('epoch-', '')}.`);
+      } catch {
+        setText(copyStatus, 'Copy failed. Check clipboard permissions.');
+      }
+    });
+  });
+</script>
