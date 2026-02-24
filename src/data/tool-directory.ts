@@ -39,6 +39,13 @@ export const toolSections: ToolSection[] = [
         description: 'Scale and fix SVG dimensions without quality loss.',
         tags: ['svg', 'vector', 'resize'],
         icon: 'svg'
+      },
+      {
+        name: 'Image Optimization + EXIF Tools',
+        href: '/tools/image-optimizer',
+        description: 'Compress images, target output size, and read or strip EXIF metadata.',
+        tags: ['image', 'optimize', 'compress', 'exif', 'metadata'],
+        icon: 'crop'
       }
     ]
   },
