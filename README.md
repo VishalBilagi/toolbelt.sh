@@ -47,6 +47,29 @@ Then open the local Astro dev URL (usually `http://localhost:4321`).
 - `src/styles/` - Global styles and theme tokens
 - `src/data/tool-directory.ts` - Tool catalog metadata
 
+
+## Deploy version injection (CI/CD)
+
+`AppShell` reads `PUBLIC_APP_VERSION` for the footer version label.
+
+During CI builds, `bun run build` now auto-injects this value in the following order:
+
+1. `PUBLIC_APP_VERSION` (if already provided by your pipeline)
+2. `RELEASE_VERSION` or `NEXT_RELEASE_VERSION` (from your release job)
+3. Conventional-commit-derived calculation from git history (fallback)
+
+You can preview the calculated release version locally with:
+
+```bash
+bun run release:version
+```
+
+The fallback calculator uses conventional commit subjects since the latest tag:
+
+- `feat:` -> minor bump
+- `fix:`, `perf:`, `refactor:` -> patch bump
+- `!` / `BREAKING CHANGE` -> major bump
+
 ## Contributing
 
 If you add a new tool, a good place to start is:

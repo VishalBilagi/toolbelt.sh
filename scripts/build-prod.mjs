@@ -3,6 +3,7 @@ import { access, rename } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { calculateReleaseVersion } from './calc-release-version.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, '..');
@@ -18,6 +19,20 @@ const exists = async (targetPath) => {
   } catch {
     return false;
   }
+};
+
+
+const resolveBuildVersion = async () => {
+  const existingVersion = `${process.env.PUBLIC_APP_VERSION ?? ''}`.trim();
+  if (existingVersion) return existingVersion;
+
+  const releaseVersion = `${process.env.RELEASE_VERSION ?? process.env.NEXT_RELEASE_VERSION ?? ''}`.trim();
+  if (releaseVersion) return releaseVersion;
+
+  const isCi = `${process.env.CI ?? ''}`.trim() === 'true' || Boolean(process.env.VERCEL);
+  if (!isCi) return '';
+
+  return calculateReleaseVersion();
 };
 
 const runAstroBuild = async () =>
@@ -48,6 +63,13 @@ try {
   if (hasComponentLib) {
     await rename(componentLibPage, hiddenComponentLibPage);
     moved = true;
+  }
+
+  const resolvedVersion = await resolveBuildVersion();
+  if (resolvedVersion) {
+    process.env.PUBLIC_APP_VERSION = resolvedVersion;
+    if (!process.env.RELEASE_VERSION) process.env.RELEASE_VERSION = resolvedVersion;
+    console.log(`[build-prod] Using PUBLIC_APP_VERSION=${resolvedVersion}`);
   }
 
   await runAstroBuild();
