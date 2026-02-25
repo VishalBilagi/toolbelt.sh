@@ -608,6 +608,21 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
         aria-label={translate('shell.header.aria')}
       >
         <div class="ui-page site-header-inner">
+          <button
+            class="mobile-nav-toggle"
+            type="button"
+            data-mobile-nav-toggle
+            aria-controls="site-primary-nav"
+            aria-expanded="false"
+            aria-label="Open navigation menu"
+            title="Open navigation menu"
+          >
+            <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+            <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+            <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
+            <i class="mobile-nav-close-icon" data-bx="x-circle" aria-hidden="true"></i>
+          </button>
+
           <a href={localizeAppLink('/', locale)} class="brand">toolbelt.sh</a>
 
           <nav id="site-primary-nav" class="site-nav" aria-label={translate('shell.nav.primaryAria')} data-mobile-nav>
@@ -691,21 +706,6 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
                 }
               </select>
             </div>
-
-            <button
-              class="mobile-nav-toggle"
-              type="button"
-              data-mobile-nav-toggle
-              aria-controls="site-primary-nav"
-              aria-expanded="false"
-              aria-label="Open navigation menu"
-              title="Open navigation menu"
-            >
-              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
-              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
-              <span class="mobile-nav-toggle-bar" aria-hidden="true"></span>
-              <i class="mobile-nav-close-icon" data-bx="x-circle" aria-hidden="true"></i>
-            </button>
 
             <button class="theme-toggle" type="button" data-mode-toggle aria-label="Toggle theme">
               <i class="icon icon-moon" data-bx="moon" aria-hidden="true"></i>
