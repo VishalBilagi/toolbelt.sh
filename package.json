@@ -10,7 +10,8 @@
     "build": "node ./scripts/build-prod.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "bun test"
+    "test": "bun test",
+    "release:version": "node ./scripts/calc-release-version.mjs"
   },
   "dependencies": {
     "@boxicons/js": "^1.0.1",

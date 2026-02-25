@@ -19,6 +19,7 @@ const isHomeRoute = pathname === '/' || pathname === '/index.html';
 const disableScrollReveal = pathname.startsWith('/tools/') && pathname !== '/tools' && pathname !== '/tools/';
 const githubUrl = 'https://github.com/VishalBilagi/toolbelt.sh';
 const ldClientId = `${import.meta.env.LD_CLIENT_ID ?? ''}`.trim();
+const appVersion = `${import.meta.env.PUBLIC_APP_VERSION ?? import.meta.env.npm_package_version ?? 'dev'}`.trim();
 
 const coreNavItems = [
   { href: '/', label: 'Home', matches: ['/', '/index.html'] },
@@ -575,6 +576,12 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       ></button>
 
       <slot />
+
+      <footer class="site-footer">
+        <div class="ui-page site-footer-inner">
+          <p class="site-footer-version">Version {appVersion}</p>
+        </div>
+      </footer>
     </div>
     <Analytics />
     <SpeedInsights />
@@ -917,6 +924,22 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
   :global(html[data-mode='light'] svg.icon-moon) {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(40deg) scale(0.7);
+  }
+
+  .site-footer {
+    border-top: 1px solid var(--border-muted);
+    margin-top: var(--space-xl);
+  }
+
+  .site-footer-inner {
+    padding-block: var(--space-lg);
+  }
+
+  .site-footer-version {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    text-align: center;
   }
 
   .github-link {
