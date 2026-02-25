@@ -1,0 +1,54 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">toolbelt.sh rich preview image</title>
+  <desc id="desc">A dark blueprint-style preview card for toolbelt.sh with the tagline Powerful Developer Tools. Zero Server Uploads.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1223"/>
+      <stop offset="1" stop-color="#060B16"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 92) rotate(47.4) scale(540 370)">
+      <stop stop-color="#5EA3FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#5EA3FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 510) rotate(-141.2) scale(520 360)">
+      <stop stop-color="#5EA3FF" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#5EA3FF" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" stroke="#8EC3FF" stroke-opacity="0.11" stroke-width="1"/>
+      <path d="M24 0V48M0 24H48" stroke="#8EC3FF" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="line" x1="120" y1="0" x2="1080" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EA3FF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#5EA3FF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#5EA3FF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glowA)"/>
+  <rect width="1200" height="630" fill="url(#glowB)"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#grid)"/>
+
+  <rect x="88" y="84" width="1024" height="462" rx="28" fill="#0A1326" fill-opacity="0.72" stroke="#8EC3FF" stroke-opacity="0.18"/>
+  <line x1="120" y1="174" x2="1080" y2="174" stroke="url(#line)" stroke-width="2"/>
+
+  <text x="128" y="150" fill="#5EA3FF" font-family="Space Mono, monospace" font-size="28" font-weight="700" letter-spacing="1.4">toolbelt.sh</text>
+
+  <text x="128" y="292" fill="#EAF2FF" font-family="Space Grotesk, Inter, system-ui, sans-serif" font-size="70" font-weight="700">
+    Powerful Developer Tools.
+  </text>
+  <text x="128" y="368" fill="#EAF2FF" font-family="Space Grotesk, Inter, system-ui, sans-serif" font-size="70" font-weight="700">
+    Zero Server Uploads.
+  </text>
+
+  <text x="128" y="442" fill="#A9C8EF" font-family="Space Grotesk, Inter, system-ui, sans-serif" font-size="33" font-weight="500">
+    Browser-only utilities for images, data, cryptography, and more.
+  </text>
+
+  <g opacity="0.65" transform="translate(940 106)">
+    <rect width="132" height="132" rx="20" fill="#0F1B33" stroke="#79B7FF" stroke-opacity="0.5"/>
+    <path d="M38 38H94V94H38V38Z" stroke="#5EA3FF" stroke-width="5"/>
+    <path d="M38 66H94M66 38V94" stroke="#5EA3FF" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -5,9 +5,16 @@ import globalStyles from '../styles/globals.css?inline';
 import { toolSections, type ToolIcon } from '../data/tool-directory';
 interface Props {
   title: string;
+  description?: string;
 }
-const { title } = Astro.props;
+const {
+  title,
+  description = 'Browser-only utilities for images, data, cryptography, and more. Fast, private, and free developer tools that run entirely in your browser.',
+} = Astro.props;
 const pathname = Astro.url.pathname;
+const pageUrl = Astro.url.href;
+const siteName = 'toolbelt.sh';
+const socialImageUrl = '/og-preview.svg';
 const isHomeRoute = pathname === '/' || pathname === '/index.html';
 const disableScrollReveal = pathname.startsWith('/tools/') && pathname !== '/tools' && pathname !== '/tools/';
 const githubUrl = 'https://github.com/VishalBilagi/toolbelt.sh';
@@ -47,6 +54,22 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:alt" content="toolbelt.sh preview showing the tagline Powerful Developer Tools. Zero Server Uploads." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content="toolbelt.sh preview showing the tagline Powerful Developer Tools. Zero Server Uploads." />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
