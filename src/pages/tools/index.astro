@@ -1,10 +1,13 @@
 ---
 import AppShell from '../../layouts/AppShell.astro';
-import Button from '../../components/ui/Button.astro';
 import ToolDirectory from '../../components/ToolDirectory.astro';
+import { createTranslator, resolveLocaleFromPathname } from '../../i18n';
+
+const locale = resolveLocaleFromPathname(Astro.url.pathname);
+const translate = createTranslator(locale);
 ---
 
-<AppShell title="All Tools">
+<AppShell title={translate('pages.toolsIndex.title')}>
   <main class="ui-page tools-page">
     <div class="tools-actions ui-cluster">
     </div>

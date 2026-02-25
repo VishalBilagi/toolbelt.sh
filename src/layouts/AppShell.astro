@@ -3,35 +3,66 @@ import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import globalStyles from '../styles/globals.css?inline';
 import { toolSections, type ToolIcon } from '../data/tool-directory';
+import {
+  createTranslator,
+  getAlternateLocaleLinks,
+  getLocaleSwitcherPath,
+  getLocalizedToolSectionTitle,
+  getLocalizedToolText,
+  hasLocalePrefix,
+  localizeAppLink,
+  resolveLocaleFromPathname,
+  stripLocalePrefix,
+} from '../i18n';
+import {
+  DEFAULT_LOCALE,
+  PREFERRED_LOCALE_COOKIE,
+  PREFERRED_LOCALE_STORAGE_KEY,
+  SUPPORTED_LOCALES,
+} from '../i18n/config';
 interface Props {
   title: string;
   description?: string;
 }
+const locale = resolveLocaleFromPathname(Astro.url.pathname);
+const translate = createTranslator(locale);
 const {
   title,
-  description = 'Browser-only utilities for images, data, cryptography, and more. Fast, private, and free developer tools that run entirely in your browser.',
+  description = translate('shell.meta.defaultDescription'),
 } = Astro.props;
 const pathname = Astro.url.pathname;
+const basePathname = stripLocalePrefix(pathname);
 const pageUrl = Astro.url.href;
 const siteName = 'toolbelt.sh';
 const socialImageUrl = '/og-preview.svg';
-const isHomeRoute = pathname === '/' || pathname === '/index.html';
-const disableScrollReveal = pathname.startsWith('/tools/') && pathname !== '/tools' && pathname !== '/tools/';
+const alternateLocaleLinks = getAlternateLocaleLinks(Astro.url);
+const isHomeRoute = basePathname === '/';
+const hasExplicitLocalePrefix = hasLocalePrefix(pathname);
+const shouldAutoRedirectToPreferredLocale = !hasExplicitLocalePrefix && (basePathname === '/' || basePathname === '/tools');
+const disableScrollReveal =
+  basePathname.startsWith('/tools/') && basePathname !== '/tools' && basePathname !== '/tools/';
 const githubUrl = 'https://github.com/VishalBilagi/toolbelt.sh';
 const ldClientId = `${import.meta.env.LD_CLIENT_ID ?? ''}`.trim();
 const appVersion = `${import.meta.env.PUBLIC_APP_VERSION ?? import.meta.env.npm_package_version ?? 'dev'}`.trim();
+const localeOptions = SUPPORTED_LOCALES.map((optionLocale) => ({
+  code: optionLocale,
+  label: translate(
+    optionLocale === 'en' ? 'shell.localeSwitcher.option.en' : 'shell.localeSwitcher.option.es'
+  ),
+  href: getLocaleSwitcherPath(pathname, optionLocale),
+}));
 
 const coreNavItems = [
-  { href: '/', label: 'Home', matches: ['/', '/index.html'] },
-  { href: '/tools', label: 'All tools', matches: ['/tools'] }
+  { href: '/', label: translate('shell.nav.home'), matches: ['/', '/index.html'] },
+  { href: '/tools', label: translate('shell.nav.allTools'), matches: ['/tools'] }
 ];
 
 const isNavActive = (href: string, matches: string[]): boolean =>
   href === '/tools'
-    ? matches.some((match) => pathname === match || pathname === `${match}/`)
-    : matches.some((match) => pathname === match || pathname.startsWith(`${match}/`));
+    ? matches.some((match) => basePathname === match || basePathname === `${match}/`)
+    : matches.some((match) => basePathname === match || basePathname.startsWith(`${match}/`));
 
-const isToolActive = (href: string): boolean => pathname === href || pathname.startsWith(`${href}/`);
+const isToolActive = (href: string): boolean => basePathname === href || basePathname.startsWith(`${href}/`);
 
 const isSectionActive = (section: (typeof toolSections)[number]): boolean =>
   section.tools.some((tool) => isToolActive(tool.href));
@@ -50,7 +81,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
 };
 ---
 <!doctype html>
-<html lang="en" data-mode="dark">
+<html lang={locale} data-mode="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -70,6 +101,11 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageUrl} />
     <meta name="twitter:image:alt" content="toolbelt.sh preview showing the tagline Powerful Developer Tools. Zero Server Uploads." />
+    {
+      alternateLocaleLinks.map((link) => (
+        <link rel="alternate" hreflang={link.locale} href={link.href} />
+      ))
+    }
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -416,6 +452,89 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
         setupMobileNavDrawer();
       }
     </script>
+    <script
+      is:inline
+      define:vars={{
+        defaultLocale: DEFAULT_LOCALE,
+        localeStorageKey: PREFERRED_LOCALE_STORAGE_KEY,
+        localeCookieName: PREFERRED_LOCALE_COOKIE,
+        shouldAutoRedirectToPreferredLocale,
+      }}
+    >
+      (() => {
+        const initLocaleSwitchers = () => {
+          const switchers = Array.from(document.querySelectorAll('[data-locale-switcher]'));
+          if (!switchers.length) return;
+
+          const parseCookieLocale = () => {
+            const cookie = document.cookie
+              .split('; ')
+              .find((entry) => entry.startsWith(`${localeCookieName}=`));
+            if (!cookie) return '';
+            const [, value = ''] = cookie.split('=');
+            return decodeURIComponent(value);
+          };
+
+          const getSavedLocale = () => {
+            try {
+              const stored = localStorage.getItem(localeStorageKey);
+              if (typeof stored === 'string' && stored.length > 0) return stored;
+            } catch {
+            }
+
+            return parseCookieLocale();
+          };
+
+          const persistLocale = (nextLocale) => {
+            try {
+              localStorage.setItem(localeStorageKey, nextLocale);
+            } catch {
+            }
+
+            document.cookie = `${localeCookieName}=${encodeURIComponent(nextLocale)}; path=/; max-age=31536000; samesite=lax`;
+          };
+
+          const primarySwitcher = switchers.find((node) => node instanceof HTMLSelectElement);
+          if (shouldAutoRedirectToPreferredLocale && primarySwitcher instanceof HTMLSelectElement) {
+            const savedLocale = getSavedLocale();
+            if (savedLocale && savedLocale !== defaultLocale) {
+              const targetOption = Array.from(primarySwitcher.options).find((option) => option.value === savedLocale);
+              const targetPath = targetOption?.dataset.path;
+              if (typeof targetPath === 'string' && targetPath.length > 0) {
+                window.location.replace(targetPath);
+                return;
+              }
+            }
+          }
+
+          for (const switcher of switchers) {
+            if (!(switcher instanceof HTMLSelectElement)) continue;
+            if (switcher.dataset.localeBound === 'true') continue;
+
+            switcher.dataset.localeBound = 'true';
+            switcher.addEventListener('change', () => {
+              const selectedOption = switcher.selectedOptions.item(0);
+              const nextLocale = switcher.value;
+              const nextPath = selectedOption?.dataset.path;
+
+              if (!nextLocale) return;
+
+              persistLocale(nextLocale);
+
+              if (typeof nextPath === 'string' && nextPath.length > 0) {
+                window.location.assign(nextPath);
+              }
+            });
+          }
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initLocaleSwitchers, { once: true });
+        } else {
+          initLocaleSwitchers();
+        }
+      })();
+    </script>
     <script is:inline define:vars={{ ldClientId }}>
       window.__toolbeltConfig = {
         ...(window.__toolbeltConfig || {}),
@@ -486,16 +605,16 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     <div class="app-frame">
       <header
         class:list={['site-header', isHomeRoute && 'site-header--home']}
-        aria-label="Global Header"
+        aria-label={translate('shell.header.aria')}
       >
         <div class="ui-page site-header-inner">
-          <a href="/" class="brand">toolbelt.sh</a>
+          <a href={localizeAppLink('/', locale)} class="brand">toolbelt.sh</a>
 
-          <nav id="site-primary-nav" class="site-nav" aria-label="Primary" data-mobile-nav>
+          <nav id="site-primary-nav" class="site-nav" aria-label={translate('shell.nav.primaryAria')} data-mobile-nav>
             {
               coreNavItems.map((item) => (
                 <a
-                  href={item.href}
+                  href={localizeAppLink(item.href, locale)}
                   class={`nav-link ${isNavActive(item.href, item.matches) ? 'nav-link--active' : ''}`.trim()}
                 >
                   {item.label}
@@ -513,26 +632,35 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
                     aria-expanded="false"
                     aria-controls={`nav-menu-${index}`}
                   >
-                    {section.title}
+                    {getLocalizedToolSectionTitle(locale, section.id, section.title)}
                     <span class="nav-caret" aria-hidden="true">▾</span>
                   </button>
 
-                  <div id={`nav-menu-${index}`} class="nav-menu" role="menu" aria-label={`${section.title} tools`}>
-                    {section.tools.map((tool) => (
-                      <a
-                        href={tool.href}
-                        role="menuitem"
-                        class={`nav-menu-link ${isToolActive(tool.href) ? 'nav-menu-link--active' : ''}`.trim()}
-                      >
-                        <span class="nav-menu-icon" aria-hidden="true">
-                          <i data-bx={boxIconByToolIcon[tool.icon]} data-bx-size="xs"></i>
-                        </span>
-                        <span class="nav-menu-copy">
-                          <span class="nav-menu-title">{tool.name}</span>
-                          <span class="nav-menu-desc">{tool.description}</span>
-                        </span>
-                      </a>
-                    ))}
+                  <div
+                    id={`nav-menu-${index}`}
+                    class="nav-menu"
+                    role="menu"
+                    aria-label={`${getLocalizedToolSectionTitle(locale, section.id, section.title)} tools`}
+                  >
+                    {section.tools.map((tool) => {
+                      const localizedTool = getLocalizedToolText(locale, tool.href, tool.name, tool.description);
+
+                      return (
+                        <a
+                          href={localizeAppLink(tool.href, locale)}
+                          role="menuitem"
+                          class={`nav-menu-link ${isToolActive(tool.href) ? 'nav-menu-link--active' : ''}`.trim()}
+                        >
+                          <span class="nav-menu-icon" aria-hidden="true">
+                            <i data-bx={boxIconByToolIcon[tool.icon]} data-bx-size="xs"></i>
+                          </span>
+                          <span class="nav-menu-copy">
+                            <span class="nav-menu-title">{localizedTool.name}</span>
+                            <span class="nav-menu-desc">{localizedTool.description}</span>
+                          </span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               ))
@@ -540,6 +668,30 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
           </nav>
 
           <div class="header-actions">
+            <div class="locale-switcher-wrap">
+              <label class="sr-only" for="header-locale-switcher">
+                {translate('shell.localeSwitcher.label')}
+              </label>
+              <select
+                id="header-locale-switcher"
+                class="locale-switcher"
+                aria-label={translate('shell.localeSwitcher.label')}
+                data-locale-switcher
+              >
+                {
+                  localeOptions.map((option) => (
+                    <option
+                      value={option.code}
+                      data-path={option.href}
+                      selected={option.code === locale}
+                    >
+                      {option.label}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+
             <button
               class="mobile-nav-toggle"
               type="button"
@@ -562,7 +714,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
 
             <a class="github-link" href={githubUrl} target="_blank" rel="noreferrer">
               <i class="github-mark" data-bx="github" data-bx-pack="brands" aria-hidden="true"></i>
-              <span>GitHub</span>
+              <span>{translate('shell.github')}</span>
             </a>
           </div>
         </div>
@@ -579,7 +731,7 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
 
       <footer class="site-footer">
         <div class="ui-page site-footer-inner">
-          <p class="site-footer-version">Version {appVersion}</p>
+          <p class="site-footer-version">{translate('shell.footer.version')} {appVersion}</p>
         </div>
       </footer>
     </div>
@@ -821,6 +973,64 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     gap: 0.52rem;
   }
 
+  .locale-switcher-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .locale-switcher-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    transform: translateY(-56%);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  .locale-switcher {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 2.35rem;
+    min-width: 7rem;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    color: var(--text-primary);
+    padding-left: 0.7rem;
+    padding-right: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+  }
+
+  .locale-switcher:hover {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border-default));
+    transform: translateY(-1px);
+  }
+
+  .locale-switcher:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .mobile-nav-toggle {
     display: none;
     width: 2.35rem;
@@ -1043,6 +1253,10 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
       margin-left: auto;
     }
 
+    .locale-switcher {
+      min-width: 6.5rem;
+    }
+
     .site-nav {
       order: 3;
       width: 100%;
@@ -1084,6 +1298,18 @@ const boxIconByToolIcon: Record<ToolIcon, string> = {
     .header-actions {
       margin-left: auto;
       gap: 0.42rem;
+    }
+
+    .locale-switcher {
+      min-width: 5.8rem;
+      padding-left: 0.5rem;
+      padding-right: 1.7rem;
+      font-size: 0.75rem;
+    }
+
+    .locale-switcher-wrap::after {
+      right: 0.55rem;
+      font-size: 0.7rem;
     }
 
     .mobile-nav-toggle {

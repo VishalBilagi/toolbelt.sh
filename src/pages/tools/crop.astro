@@ -1,22 +1,30 @@
 ---
 import Analytics from '@vercel/analytics/astro';
-const target = '/tools/image-editor';
+import {
+  createTranslator,
+  localizeAppLink,
+  resolveLocaleFromPathname,
+} from '../../i18n';
+
+const locale = resolveLocaleFromPathname(Astro.url.pathname);
+const translate = createTranslator(locale);
+const target = localizeAppLink('/tools/image-editor', locale);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="refresh" content={`0;url=${target}`} />
     <link rel="canonical" href={target} />
-    <title>Redirecting…</title>
-    <script is:inline>
-      window.location.replace('/tools/image-editor');
+    <title>{translate('pages.crop.redirectTitle')}</title>
+    <script is:inline define:vars={{ target }}>
+      window.location.replace(target);
     </script>
   </head>
   <body>
     <p>
-      Redirecting to <a href={target}>{target}</a>...
+      {translate('pages.crop.redirectMessage')} <a href={target}>{target}</a>...
     </p>
     <Analytics />
   </body>
