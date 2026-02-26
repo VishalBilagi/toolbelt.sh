@@ -1,0 +1,212 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+---
+
+<ToolLayout title="PDF Toolkit">
+  <section class="tool-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Merge PDFs</h2>
+          <p class="ui-card__description">Combine multiple PDF files in order and export one merged document.</p>
+        </div>
+      </div>
+
+      <Field label="PDF files" htmlFor="merge-files-input">
+        <Input id="merge-files-input" type="file" accept="application/pdf" multiple />
+      </Field>
+
+      <p id="merge-files-list" class="hint">No files selected.</p>
+
+      <div class="actions">
+        <Button id="merge-run" variant="primary">Merge PDFs</Button>
+      </div>
+
+      <p id="merge-status" class="status" aria-live="polite">Ready.</p>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Split PDF</h2>
+          <p class="ui-card__description">Split one PDF into one-file-per-page exports.</p>
+        </div>
+      </div>
+
+      <Field label="PDF file" htmlFor="split-file-input">
+        <Input id="split-file-input" type="file" accept="application/pdf" />
+      </Field>
+
+      <div class="actions">
+        <Button id="split-run" variant="primary">Split PDF</Button>
+      </div>
+
+      <p id="split-status" class="status" aria-live="polite">Ready.</p>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Extract Pages</h2>
+          <p class="ui-card__description">Pick a page list like <code>1,3-5</code> and export only those pages.</p>
+        </div>
+      </div>
+
+      <Field label="PDF file" htmlFor="extract-file-input">
+        <Input id="extract-file-input" type="file" accept="application/pdf" />
+      </Field>
+
+      <Field label="Pages to extract" htmlFor="extract-pages-input">
+        <Input id="extract-pages-input" type="text" placeholder="1,3-5" />
+      </Field>
+
+      <div class="actions">
+        <Button id="extract-run" variant="primary">Extract pages</Button>
+      </div>
+
+      <p id="extract-status" class="status" aria-live="polite">Ready.</p>
+    </Card>
+  </section>
+</ToolLayout>
+
+<style>
+  .tool-grid {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .status {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+  }
+
+  .hint {
+    margin-top: var(--space-sm);
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+  }
+</style>
+
+<script>
+  let logic: typeof import('../../tools/pdf-toolkit/logic') | null = null;
+
+  const getLogic = async () => {
+    if (!logic) {
+      logic = await import('../../tools/pdf-toolkit/logic');
+    }
+
+    return logic;
+  };
+
+  const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
+
+  const readFileBytes = async (file: File): Promise<Uint8Array> => {
+    const buffer = await file.arrayBuffer();
+    return new Uint8Array(buffer);
+  };
+
+  const downloadBytes = (filename: string, bytes: Uint8Array) => {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(href);
+  };
+
+  const mergeFilesInput = byId<HTMLInputElement>('merge-files-input');
+  const mergeFilesList = byId<HTMLElement>('merge-files-list');
+  const mergeStatus = byId<HTMLElement>('merge-status');
+
+  mergeFilesInput?.addEventListener('change', () => {
+    const names = [...(mergeFilesInput.files ?? [])].map((file) => file.name);
+    if (!mergeFilesList) return;
+    mergeFilesList.textContent = names.length > 0 ? names.join(' • ') : 'No files selected.';
+  });
+
+  document.getElementById('merge-run')?.addEventListener('click', async () => {
+    try {
+      const files = [...(mergeFilesInput?.files ?? [])];
+      const bytes = await Promise.all(files.map((file) => readFileBytes(file)));
+      const { mergePdfFiles } = await getLogic();
+      const result = await mergePdfFiles(bytes);
+      downloadBytes('merged.pdf', result.bytes);
+
+      if (mergeStatus) {
+        mergeStatus.textContent = `Merged ${files.length} files (${result.pageCount} total pages).`;
+      }
+    } catch (error) {
+      if (mergeStatus) {
+        mergeStatus.textContent = error instanceof Error ? error.message : 'Unable to merge PDFs.';
+      }
+    }
+  });
+
+  const splitFileInput = byId<HTMLInputElement>('split-file-input');
+  const splitStatus = byId<HTMLElement>('split-status');
+
+  document.getElementById('split-run')?.addEventListener('click', async () => {
+    try {
+      const file = splitFileInput?.files?.[0];
+      if (!file) {
+        throw new Error('Choose a PDF file to split.');
+      }
+
+      const { splitPdfIntoSinglePages } = await getLogic();
+      const pages = await splitPdfIntoSinglePages(await readFileBytes(file));
+      const baseName = file.name.replace(/\.pdf$/i, '') || 'split';
+
+      pages.forEach((pageBytes, index) => {
+        downloadBytes(`${baseName}-page-${index + 1}.pdf`, pageBytes);
+      });
+
+      if (splitStatus) {
+        splitStatus.textContent = `Created ${pages.length} single-page PDFs.`;
+      }
+    } catch (error) {
+      if (splitStatus) {
+        splitStatus.textContent = error instanceof Error ? error.message : 'Unable to split PDF.';
+      }
+    }
+  });
+
+  const extractFileInput = byId<HTMLInputElement>('extract-file-input');
+  const extractPagesInput = byId<HTMLInputElement>('extract-pages-input');
+  const extractStatus = byId<HTMLElement>('extract-status');
+
+  document.getElementById('extract-run')?.addEventListener('click', async () => {
+    try {
+      const file = extractFileInput?.files?.[0];
+      if (!file) {
+        throw new Error('Choose a PDF file to extract pages from.');
+      }
+
+      const { extractPdfPages, parsePageSelection } = await getLogic();
+      const parsedPages = parsePageSelection(extractPagesInput?.value ?? '');
+      const result = await extractPdfPages(await readFileBytes(file), parsedPages);
+
+      const baseName = file.name.replace(/\.pdf$/i, '') || 'extracted';
+      downloadBytes(`${baseName}-extracted.pdf`, result.bytes);
+
+      if (extractStatus) {
+        extractStatus.textContent = `Extracted ${result.pageCount} page(s).`;
+      }
+    } catch (error) {
+      if (extractStatus) {
+        extractStatus.textContent = error instanceof Error ? error.message : 'Unable to extract pages.';
+      }
+    }
+  });
+</script>

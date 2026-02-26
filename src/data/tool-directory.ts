@@ -112,6 +112,13 @@ export const toolSections: ToolSection[] = [
         icon: 'data'
       },
       {
+        name: 'PDF Toolkit',
+        href: '/tools/pdf-toolkit',
+        description: 'Merge PDFs, split files into pages, and extract selected page ranges locally.',
+        tags: ['pdf', 'merge', 'split', 'extract', 'pages', 'documents'],
+        icon: 'data'
+      },
+      {
         name: 'Crypto Utilities',
         href: '/tools/crypto',
         description: 'SHA/MD5 hashing, HMAC signing, and UUID generation.',
