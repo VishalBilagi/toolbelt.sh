@@ -8,7 +8,7 @@ import Textarea from '../../components/ui/Textarea.astro';
 
 <ToolLayout title="APK Inspector">
   <section class="apk-shell">
-    <Card interactive={false} class="apk-drop-card">
+    <Card interactive={false} class="apk-drop-card ui-card--lg">
       <h2 class="ui-card__title">Drop an APK to inspect</h2>
       <p class="ui-card__description">Parse package metadata, permissions, manifest summary, signing artifacts, and file size breakdown entirely in your browser.</p>
       <label id="apk-drop-zone" class="apk-drop-zone" for="apk-input">
@@ -24,12 +24,12 @@ import Textarea from '../../components/ui/Textarea.astro';
 
     <div class="apk-results" hidden id="apk-results">
       <aside class="apk-sidebar">
-        <Card interactive={false}>
+        <Card interactive={false} class="sidebar-card">
           <h3 class="ui-card__title">Identity</h3>
           <dl class="identity-list" id="identity-list"></dl>
         </Card>
 
-        <Card interactive={false}>
+        <Card interactive={false} class="sidebar-card">
           <h3 class="ui-card__title">Sections</h3>
           <nav class="side-nav">
             <a href="#overview">Overview</a>
@@ -43,15 +43,16 @@ import Textarea from '../../components/ui/Textarea.astro';
       </aside>
 
       <div class="apk-main">
-        <Card id="overview" interactive={false}>
+        <Card id="overview" interactive={false} class="section-card">
           <h3 class="ui-card__title">Overview</h3>
           <div class="details-grid" id="overview-grid"></div>
         </Card>
 
-        <Card id="permissions" interactive={false}>
+        <Card id="permissions" interactive={false} class="section-card">
           <div class="section-head">
             <h3 class="ui-card__title">Permissions</h3>
             <div class="perm-controls">
+              <span class="perm-label">Filter</span>
               <Input id="perm-search" type="search" placeholder="Search permissions" />
               <label><input id="perm-dangerous" type="checkbox" /> Dangerous only</label>
             </div>
@@ -59,19 +60,19 @@ import Textarea from '../../components/ui/Textarea.astro';
           <ul id="permissions-list" class="simple-list"></ul>
         </Card>
 
-        <Card id="manifest" interactive={false}>
+        <Card id="manifest" interactive={false} class="section-card">
           <h3 class="ui-card__title">Manifest</h3>
           <div id="manifest-summary" class="details-grid"></div>
           <Textarea id="manifest-raw" rows="12" readonly />
         </Card>
 
-        <Card id="signing" interactive={false}>
+        <Card id="signing" interactive={false} class="section-card">
           <h3 class="ui-card__title">Signing</h3>
           <div id="signing-schemes" class="pill-list"></div>
           <ul id="fingerprints-list" class="simple-list"></ul>
         </Card>
 
-        <Card id="files" interactive={false}>
+        <Card id="files" interactive={false} class="section-card">
           <div class="section-head">
             <h3 class="ui-card__title">Files</h3>
             <Input id="files-filter" type="search" placeholder="Filter path contains…" />
@@ -79,7 +80,7 @@ import Textarea from '../../components/ui/Textarea.astro';
           <ul id="files-list" class="simple-list"></ul>
         </Card>
 
-        <Card id="size" interactive={false}>
+        <Card id="size" interactive={false} class="section-card">
           <h3 class="ui-card__title">Size breakdown</h3>
           <div id="size-breakdown" class="details-grid"></div>
           <h4>Largest entries</h4>
@@ -91,25 +92,240 @@ import Textarea from '../../components/ui/Textarea.astro';
 </ToolLayout>
 
 <style>
-  .apk-shell { display: grid; gap: var(--space-lg); }
-  .apk-drop-zone { border: 2px dashed var(--border-default); border-radius: var(--radius-lg); padding: var(--space-xl); display:grid; gap:var(--space-xs); text-align:center; cursor:pointer; margin-top: var(--space-md); }
-  .apk-drop-zone.is-over { border-color: var(--interactive-primary); background: color-mix(in srgb, var(--interactive-primary) 8%, transparent); }
-  .apk-status { margin-top: var(--space-sm); color: var(--text-secondary); }
-  .apk-top-actions { margin-top: var(--space-sm); }
-  .apk-results { display:grid; gap: var(--space-md); grid-template-columns: 18rem minmax(0,1fr); }
-  .apk-main { display:grid; gap: var(--space-md); }
-  .identity-list { display:grid; grid-template-columns: auto 1fr; gap: var(--space-xs) var(--space-sm); }
-  .identity-list dt { color: var(--text-secondary); }
-  .side-nav { display:grid; gap: var(--space-xs); }
-  .details-grid { display:grid; gap: var(--space-xs); grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); }
-  .detail-item { border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: var(--space-sm); }
-  .section-head { display:flex; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
-  .perm-controls { display:flex; gap: var(--space-sm); align-items:center; flex-wrap: wrap; }
-  .simple-list { margin: var(--space-sm) 0 0; padding-left: 1rem; max-height: 20rem; overflow:auto; }
-  .pill-list { display:flex; flex-wrap:wrap; gap: var(--space-xs); margin-top: var(--space-sm); }
-  .pill { border:1px solid var(--border-default); border-radius:999px; padding:0.2rem 0.6rem; font-size: 0.9rem; }
-  .copy-btn { margin-left: var(--space-xs); font-size: 0.8rem; }
-  @media (max-width: 900px) { .apk-results { grid-template-columns: 1fr; } }
+  :global(main.tool-content) {
+    width: min(100%, 116rem) !important;
+    max-width: min(100%, 116rem) !important;
+  }
+
+  .apk-shell {
+    display: grid;
+    gap: var(--space-2xl);
+    padding-bottom: var(--space-2xl);
+  }
+
+  .apk-drop-zone {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: clamp(var(--space-xl), 3vw, var(--space-3xl));
+    display: grid;
+    gap: var(--space-sm);
+    text-align: center;
+    cursor: pointer;
+    margin-top: var(--space-lg);
+    background: color-mix(in srgb, var(--bg-elevated) 72%, transparent);
+  }
+
+  .apk-drop-zone strong {
+    font-size: 1.15rem;
+  }
+
+  .apk-drop-zone.is-over {
+    border-color: var(--interactive-primary);
+    background: color-mix(in srgb, var(--interactive-primary) 13%, transparent);
+  }
+
+  .apk-top-actions {
+    margin-top: var(--space-lg);
+  }
+
+  .apk-status {
+    margin-top: var(--space-md);
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+  }
+
+  .apk-results {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: 22rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .apk-sidebar {
+    position: sticky;
+    top: var(--space-xl);
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .apk-main {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .sidebar-card,
+  .section-card {
+    --card-padding: clamp(var(--space-xl), 2.4vw, var(--space-2xl));
+  }
+
+  .identity-list {
+    display: grid;
+    grid-template-columns: minmax(5.4rem, auto) minmax(0, 1fr);
+    row-gap: var(--space-md);
+    column-gap: var(--space-md);
+    margin: 0;
+  }
+
+  .identity-list dt {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .identity-list dd {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .side-nav {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+  }
+
+  .side-nav a {
+    display: block;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    color: var(--text-secondary);
+    transition: border-color var(--transition-base), background var(--transition-base), color var(--transition-base);
+  }
+
+  .side-nav a:hover {
+    border-color: var(--border-default);
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  }
+
+  .details-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    margin-top: var(--space-sm);
+  }
+
+  .detail-item {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+  }
+
+  .detail-item strong {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-size: 0.95rem;
+  }
+
+  .detail-item p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .perm-controls {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .perm-label {
+    color: var(--text-tertiary);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .perm-controls :global(.ui-input),
+  .section-head :global(.ui-input) {
+    min-width: 17rem;
+  }
+
+  .simple-list {
+    list-style: none;
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    max-height: 26rem;
+    overflow: auto;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .simple-list li {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.62rem 0.75rem;
+    line-height: 1.45;
+    background: color-mix(in srgb, var(--bg-elevated) 74%, transparent);
+  }
+
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+  }
+
+  .pill {
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  }
+
+  .copy-btn {
+    margin-left: var(--space-sm);
+    font-size: 0.74rem;
+    line-height: 1;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.48rem;
+    background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
+    color: var(--text-secondary);
+  }
+
+  .copy-btn:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-default));
+  }
+
+  #manifest-raw {
+    margin-top: var(--space-lg);
+    min-height: 24rem;
+  }
+
+  @media (max-width: 1100px) {
+    .apk-results {
+      grid-template-columns: 1fr;
+    }
+
+    .apk-sidebar {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+  }
+
+  @media (max-width: 700px) {
+    .perm-controls :global(.ui-input),
+    .section-head :global(.ui-input) {
+      min-width: 100%;
+    }
+  }
 </style>
 
 <script>
