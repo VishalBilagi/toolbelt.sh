@@ -177,13 +177,14 @@ import Input from '../../components/ui/Input.astro';
 
 <style>
   :global(main.tool-content) {
-    width: min(100%, 120rem) !important;
-    max-width: min(100%, 120rem) !important;
+    width: min(100%, 106rem) !important;
+    max-width: min(100%, 106rem) !important;
   }
 
   .pdf-shell {
     display: grid;
     gap: var(--space-lg);
+    padding-inline: clamp(0.75rem, 1.8vw, 1.8rem);
   }
 
   .pdf-tabs {
@@ -489,7 +490,7 @@ import Input from '../../components/ui/Input.astro';
     URL.revokeObjectURL(href);
   };
 
-  const makePreviewSrc = (fileUrl: string, page: number) => `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${page}&view=FitH`;
+  const makePreviewSrc = (fileUrl: string, page: number, stamp = 0) => `${fileUrl}?v=${stamp}#toolbar=0&navpanes=0&scrollbar=0&page=${page}&view=FitH`;
 
   const previewStateByMode: Record<PreviewMode, PreviewState> = {
     merge: { fileUrl: null, page: 1, totalPages: 1 },
@@ -540,10 +541,7 @@ import Input from '../../components/ui/Input.astro';
     const pageLabel = `Page ${state.page}`;
     const ratioLabel = `Page ${state.page}/${state.totalPages}`;
 
-    frame.src = 'about:blank';
-    requestAnimationFrame(() => {
-      frame.src = makePreviewSrc(state.fileUrl ?? '', state.page);
-    });
+    frame.src = makePreviewSrc(state.fileUrl ?? '', state.page, Date.now());
     frame.hidden = false;
     empty.hidden = true;
     top.hidden = false;
