@@ -211,7 +211,7 @@ const parseBinaryManifest = (bytes: Uint8Array): BinaryXmlManifest => {
       const attributeCount = view.getUint16(offset + 28, true);
 
       const attributes: BinaryXmlAttribute[] = [];
-      const attrBase = offset + attributeStart;
+      const attrBase = offset + 16 + attributeStart;
 
       for (let attrIndex = 0; attrIndex < attributeCount; attrIndex += 1) {
         const attrOffset = attrBase + attrIndex * attributeSize;
@@ -332,21 +332,43 @@ const decodeManifest = async (zip: JSZip): Promise<ManifestSummary> => {
       .filter((value, index, list) => value !== UNKNOWN_VALUE && list.indexOf(value) === index)
       .sort((a, b) => a.localeCompare(b));
 
+    const rawManifestText = parsed.xmlText || 'Unable to render manifest preview.';
+
+    const fallbackFromRaw = (key: string): string => {
+      const patterns = [new RegExp(`${key}\\s*=\\s*"([^"]+)"`), new RegExp(`${key}\\s*=\\s*'([^']+)'`)];
+      for (const pattern of patterns) {
+        const match = rawManifestText.match(pattern);
+        if (match?.[1]) return match[1];
+      }
+      return UNKNOWN_VALUE;
+    };
+
+    const packageName = safeString(pickManifestField(manifestNode?.attributes ?? [], ['package']));
+    const versionName = safeString(pickManifestField(manifestNode?.attributes ?? [], ['versionName']));
+    const versionCode = safeString(pickManifestField(manifestNode?.attributes ?? [], ['versionCode']));
+    const minSdk = safeString(pickManifestField(sdkNode?.attributes ?? [], ['minSdkVersion']));
+    const targetSdk = safeString(pickManifestField(sdkNode?.attributes ?? [], ['targetSdkVersion']));
+    const appLabel = safeString(pickManifestField(appNode?.attributes ?? [], ['label']));
+
+    const resolvedPermissions = permissions.length
+      ? permissions
+      : [...new Set(Array.from(rawManifestText.matchAll(/android\.permission\.[A-Z0-9_]+/g)).map((match) => match[0]))].sort((a, b) => a.localeCompare(b));
+
     return {
-      packageName: safeString(pickManifestField(manifestNode?.attributes ?? [], ['package'])),
-      versionName: safeString(pickManifestField(manifestNode?.attributes ?? [], ['versionName'])),
-      versionCode: safeString(pickManifestField(manifestNode?.attributes ?? [], ['versionCode'])),
-      minSdk: safeString(pickManifestField(sdkNode?.attributes ?? [], ['minSdkVersion'])),
-      targetSdk: safeString(pickManifestField(sdkNode?.attributes ?? [], ['targetSdkVersion'])),
-      appLabel: safeString(pickManifestField(appNode?.attributes ?? [], ['label'])),
-      permissions,
+      packageName: packageName === UNKNOWN_VALUE ? fallbackFromRaw('package') : packageName,
+      versionName: versionName === UNKNOWN_VALUE ? fallbackFromRaw('versionName') : versionName,
+      versionCode: versionCode === UNKNOWN_VALUE ? fallbackFromRaw('versionCode') : versionCode,
+      minSdk: minSdk === UNKNOWN_VALUE ? fallbackFromRaw('minSdkVersion') : minSdk,
+      targetSdk: targetSdk === UNKNOWN_VALUE ? fallbackFromRaw('targetSdkVersion') : targetSdk,
+      appLabel: appLabel === UNKNOWN_VALUE ? fallbackFromRaw('label') : appLabel,
+      permissions: resolvedPermissions,
       components: {
         activities: parsed.nodes.filter((node) => node.name === 'activity' || node.name === 'activity-alias').length,
         services: parsed.nodes.filter((node) => node.name === 'service').length,
         receivers: parsed.nodes.filter((node) => node.name === 'receiver').length,
         providers: parsed.nodes.filter((node) => node.name === 'provider').length
       },
-      rawManifest: parsed.xmlText || 'Unable to render manifest preview.'
+      rawManifest: rawManifestText
     };
   } catch {
     const merged = `${new TextDecoder('utf-8', { fatal: false }).decode(bytes)}\n${new TextDecoder('utf-16le', { fatal: false }).decode(bytes)}`;
