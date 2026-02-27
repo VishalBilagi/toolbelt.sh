@@ -41,7 +41,7 @@ import Input from '../../components/ui/Input.astro';
               <Button id="merge-run" variant="primary">Merge PDFs</Button>
             </div>
 
-            <p id="merge-status" class="status" aria-live="polite">Ready.</p>
+            <p id="merge-status" class="status" aria-live="polite">Select at least two PDF files to merge.</p>
           </section>
 
           <section class="panel-box preview-box">
@@ -49,8 +49,21 @@ import Input from '../../components/ui/Input.astro';
               <h3>Preview</h3>
               <span id="merge-preview-label" class="preview-label">No PDF selected</span>
             </div>
+
+            <div id="merge-preview-top" class="preview-counter" hidden>
+              <span id="merge-page-center-top">Page 1</span>
+              <span id="merge-page-ratio-top">Page 1/1</span>
+            </div>
+
             <iframe id="merge-preview-frame" class="pdf-preview" title="Merge PDF preview" hidden></iframe>
             <p id="merge-preview-empty" class="hint">Select one or more PDFs to preview and merge.</p>
+
+            <div id="merge-preview-bottom" class="preview-footer" hidden>
+              <button id="merge-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="merge-page-center-bottom">Page 1</span>
+              <span id="merge-page-ratio-bottom">Page 1/1</span>
+              <button id="merge-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
           </section>
         </div>
       </Card>
@@ -83,8 +96,21 @@ import Input from '../../components/ui/Input.astro';
               <h3>Preview</h3>
               <span id="split-preview-label" class="preview-label">No PDF selected</span>
             </div>
+
+            <div id="split-preview-top" class="preview-counter" hidden>
+              <span id="split-page-center-top">Page 1</span>
+              <span id="split-page-ratio-top">Page 1/1</span>
+            </div>
+
             <iframe id="split-preview-frame" class="pdf-preview" title="Split PDF preview" hidden></iframe>
             <p id="split-preview-empty" class="hint">Choose a PDF to inspect before splitting.</p>
+
+            <div id="split-preview-bottom" class="preview-footer" hidden>
+              <button id="split-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="split-page-center-bottom">Page 1</span>
+              <span id="split-page-ratio-bottom">Page 1/1</span>
+              <button id="split-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
           </section>
         </div>
       </Card>
@@ -121,8 +147,21 @@ import Input from '../../components/ui/Input.astro';
               <h3>Preview</h3>
               <span id="extract-preview-label" class="preview-label">No PDF selected</span>
             </div>
+
+            <div id="extract-preview-top" class="preview-counter" hidden>
+              <span id="extract-page-center-top">Page 1</span>
+              <span id="extract-page-ratio-top">Page 1/1</span>
+            </div>
+
             <iframe id="extract-preview-frame" class="pdf-preview" title="Extract PDF preview" hidden></iframe>
             <p id="extract-preview-empty" class="hint">Choose a PDF and page range, then export a new file.</p>
+
+            <div id="extract-preview-bottom" class="preview-footer" hidden>
+              <button id="extract-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="extract-page-center-bottom">Page 1</span>
+              <span id="extract-page-ratio-bottom">Page 1/1</span>
+              <button id="extract-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
           </section>
         </div>
       </Card>
@@ -187,7 +226,7 @@ import Input from '../../components/ui/Input.astro';
   .panel-grid {
     display: grid;
     gap: var(--space-md);
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(20rem, 0.85fr) minmax(0, 1.55fr);
   }
 
   .panel-box {
@@ -240,27 +279,79 @@ import Input from '../../components/ui/Input.astro';
     font-family: var(--font-mono);
   }
 
+  .preview-counter,
+  .preview-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 0.45rem 0.1rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .preview-footer {
+    grid-template-columns: auto 1fr auto auto;
+    gap: var(--space-sm);
+  }
+
+  .preview-counter span:first-child,
+  .preview-footer span:nth-child(2) {
+    justify-self: center;
+  }
+
+  .preview-counter span:last-child,
+  .preview-footer span:nth-child(3) {
+    justify-self: end;
+  }
+
+  .page-button {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    color: var(--text-primary);
+    min-height: 2rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .page-button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+
   .pdf-preview {
     width: 100%;
-    min-height: 28rem;
+    min-height: clamp(34rem, 72vh, 64rem);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--bg-inset) 90%, transparent);
   }
 
-  @media (max-width: 1100px) {
+  @media (max-width: 1180px) {
     .panel-grid {
       grid-template-columns: 1fr;
     }
 
     .pdf-preview {
-      min-height: 22rem;
+      min-height: 26rem;
     }
   }
 </style>
 
 <script>
+  type PreviewMode = 'merge' | 'split' | 'extract';
+
+  interface PreviewState {
+    fileUrl: string | null;
+    page: number;
+    totalPages: number;
+  }
+
   let logic: typeof import('../../tools/pdf-toolkit/logic') | null = null;
+  let pdfLib: typeof import('pdf-lib') | null = null;
 
   const getLogic = async () => {
     if (!logic) {
@@ -268,6 +359,14 @@ import Input from '../../components/ui/Input.astro';
     }
 
     return logic;
+  };
+
+  const getPdfLib = async () => {
+    if (!pdfLib) {
+      pdfLib = await import('pdf-lib');
+    }
+
+    return pdfLib;
   };
 
   const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
@@ -287,10 +386,12 @@ import Input from '../../components/ui/Input.astro';
     URL.revokeObjectURL(href);
   };
 
-  const previewUrlByMode: Record<string, string | null> = {
-    merge: null,
-    split: null,
-    extract: null,
+  const makePreviewSrc = (fileUrl: string, page: number) => `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${page}&view=FitH`;
+
+  const previewStateByMode: Record<PreviewMode, PreviewState> = {
+    merge: { fileUrl: null, page: 1, totalPages: 1 },
+    split: { fileUrl: null, page: 1, totalPages: 1 },
+    extract: { fileUrl: null, page: 1, totalPages: 1 },
   };
 
   const setTab = (mode: string) => {
@@ -305,48 +406,131 @@ import Input from '../../components/ui/Input.astro';
     });
   };
 
+  const renderPreview = (mode: PreviewMode) => {
+    const state = previewStateByMode[mode];
+    const frame = byId<HTMLIFrameElement>(`${mode}-preview-frame`);
+    const empty = byId<HTMLElement>(`${mode}-preview-empty`);
+    const top = byId<HTMLElement>(`${mode}-preview-top`);
+    const bottom = byId<HTMLElement>(`${mode}-preview-bottom`);
+
+    const centerTop = byId<HTMLElement>(`${mode}-page-center-top`);
+    const ratioTop = byId<HTMLElement>(`${mode}-page-ratio-top`);
+    const centerBottom = byId<HTMLElement>(`${mode}-page-center-bottom`);
+    const ratioBottom = byId<HTMLElement>(`${mode}-page-ratio-bottom`);
+
+    const prev = byId<HTMLButtonElement>(`${mode}-page-prev`);
+    const next = byId<HTMLButtonElement>(`${mode}-page-next`);
+
+    if (!frame || !empty || !top || !bottom || !centerTop || !ratioTop || !centerBottom || !ratioBottom || !prev || !next) {
+      return;
+    }
+
+    if (!state.fileUrl) {
+      frame.hidden = true;
+      frame.removeAttribute('src');
+      empty.hidden = false;
+      top.hidden = true;
+      bottom.hidden = true;
+      return;
+    }
+
+    const pageLabel = `Page ${state.page}`;
+    const ratioLabel = `Page ${state.page}/${state.totalPages}`;
+
+    frame.src = makePreviewSrc(state.fileUrl, state.page);
+    frame.hidden = false;
+    empty.hidden = true;
+    top.hidden = false;
+    bottom.hidden = false;
+
+    centerTop.textContent = pageLabel;
+    centerBottom.textContent = pageLabel;
+    ratioTop.textContent = ratioLabel;
+    ratioBottom.textContent = ratioLabel;
+
+    prev.disabled = state.page <= 1;
+    next.disabled = state.page >= state.totalPages;
+  };
+
+  const resetPreview = (mode: PreviewMode) => {
+    const current = previewStateByMode[mode];
+    if (current.fileUrl) {
+      URL.revokeObjectURL(current.fileUrl);
+    }
+
+    previewStateByMode[mode] = { fileUrl: null, page: 1, totalPages: 1 };
+    renderPreview(mode);
+
+    const label = byId<HTMLElement>(`${mode}-preview-label`);
+    if (label) {
+      label.textContent = 'No PDF selected';
+    }
+  };
+
+  const setPreview = async (mode: PreviewMode, file: File | null) => {
+    if (!file) {
+      resetPreview(mode);
+      return;
+    }
+
+    const bytes = await readFileBytes(file);
+    const { PDFDocument } = await getPdfLib();
+    const pdf = await PDFDocument.load(bytes);
+
+    const current = previewStateByMode[mode];
+    if (current.fileUrl) {
+      URL.revokeObjectURL(current.fileUrl);
+    }
+
+    previewStateByMode[mode] = {
+      fileUrl: URL.createObjectURL(file),
+      page: 1,
+      totalPages: Math.max(1, pdf.getPageCount()),
+    };
+
+    const label = byId<HTMLElement>(`${mode}-preview-label`);
+    if (label) {
+      label.textContent = file.name;
+    }
+
+    renderPreview(mode);
+  };
+
+  const stepPreviewPage = (mode: PreviewMode, delta: number) => {
+    const state = previewStateByMode[mode];
+    if (!state.fileUrl) return;
+
+    const nextPage = Math.max(1, Math.min(state.page + delta, state.totalPages));
+    if (nextPage === state.page) return;
+
+    state.page = nextPage;
+    renderPreview(mode);
+  };
+
   document.querySelectorAll<HTMLButtonElement>('[data-pdf-tab]').forEach((button) => {
     button.addEventListener('click', () => setTab(button.dataset.pdfTab ?? 'merge'));
   });
 
-  const setPreview = (mode: 'merge' | 'split' | 'extract', file: File | null) => {
-    const frame = byId<HTMLIFrameElement>(`${mode}-preview-frame`);
-    const empty = byId<HTMLElement>(`${mode}-preview-empty`);
-    const label = byId<HTMLElement>(`${mode}-preview-label`);
-
-    if (!frame || !empty || !label) return;
-
-    if (previewUrlByMode[mode]) {
-      URL.revokeObjectURL(previewUrlByMode[mode] ?? '');
-      previewUrlByMode[mode] = null;
-    }
-
-    if (!file) {
-      frame.hidden = true;
-      frame.removeAttribute('src');
-      empty.hidden = false;
-      label.textContent = 'No PDF selected';
-      return;
-    }
-
-    const href = URL.createObjectURL(file);
-    previewUrlByMode[mode] = href;
-    frame.src = href;
-    frame.hidden = false;
-    empty.hidden = true;
-    label.textContent = file.name;
-  };
+  (['merge', 'split', 'extract'] as const).forEach((mode) => {
+    byId<HTMLButtonElement>(`${mode}-page-prev`)?.addEventListener('click', () => stepPreviewPage(mode, -1));
+    byId<HTMLButtonElement>(`${mode}-page-next`)?.addEventListener('click', () => stepPreviewPage(mode, 1));
+  });
 
   const mergeFilesInput = byId<HTMLInputElement>('merge-files-input');
   const mergeFilesList = byId<HTMLElement>('merge-files-list');
   const mergeStatus = byId<HTMLElement>('merge-status');
 
-  mergeFilesInput?.addEventListener('change', () => {
+  mergeFilesInput?.addEventListener('change', async () => {
     const files = [...(mergeFilesInput.files ?? [])];
-    if (!mergeFilesList) return;
+    if (mergeFilesList) {
+      mergeFilesList.textContent = files.length > 0 ? files.map((file) => file.name).join(' • ') : 'No files selected.';
+    }
 
-    mergeFilesList.textContent = files.length > 0 ? files.map((file) => file.name).join(' • ') : 'No files selected.';
-    setPreview('merge', files[0] ?? null);
+    try {
+      await setPreview('merge', files[0] ?? null);
+    } catch {
+      resetPreview('merge');
+    }
   });
 
   document.getElementById('merge-run')?.addEventListener('click', async () => {
@@ -370,8 +554,12 @@ import Input from '../../components/ui/Input.astro';
   const splitFileInput = byId<HTMLInputElement>('split-file-input');
   const splitStatus = byId<HTMLElement>('split-status');
 
-  splitFileInput?.addEventListener('change', () => {
-    setPreview('split', splitFileInput.files?.[0] ?? null);
+  splitFileInput?.addEventListener('change', async () => {
+    try {
+      await setPreview('split', splitFileInput.files?.[0] ?? null);
+    } catch {
+      resetPreview('split');
+    }
   });
 
   document.getElementById('split-run')?.addEventListener('click', async () => {
@@ -403,8 +591,12 @@ import Input from '../../components/ui/Input.astro';
   const extractPagesInput = byId<HTMLInputElement>('extract-pages-input');
   const extractStatus = byId<HTMLElement>('extract-status');
 
-  extractFileInput?.addEventListener('change', () => {
-    setPreview('extract', extractFileInput.files?.[0] ?? null);
+  extractFileInput?.addEventListener('change', async () => {
+    try {
+      await setPreview('extract', extractFileInput.files?.[0] ?? null);
+    } catch {
+      resetPreview('extract');
+    }
   });
 
   document.getElementById('extract-run')?.addEventListener('click', async () => {
