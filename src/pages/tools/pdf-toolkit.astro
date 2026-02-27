@@ -176,6 +176,11 @@ import Input from '../../components/ui/Input.astro';
 </ToolLayout>
 
 <style>
+  :global(main.tool-content) {
+    width: min(100%, 120rem) !important;
+    max-width: min(100%, 120rem) !important;
+  }
+
   .pdf-shell {
     display: grid;
     gap: var(--space-lg);
@@ -273,23 +278,23 @@ import Input from '../../components/ui/Input.astro';
   .control-grid {
     display: grid;
     gap: var(--space-sm) var(--space-md);
-    align-items: end;
+    align-items: center;
   }
 
   .merge-controls {
-    grid-template-columns: minmax(18rem, 2fr) minmax(14rem, 1fr) auto minmax(18rem, 1.4fr);
+    grid-template-columns: minmax(24rem, 2.8fr) minmax(16rem, 1.2fr) auto minmax(18rem, 1.2fr);
     grid-template-areas:
       'file names action status';
   }
 
   .split-controls {
-    grid-template-columns: minmax(18rem, 2fr) auto minmax(18rem, 1.5fr);
+    grid-template-columns: minmax(24rem, 3fr) auto minmax(18rem, 1.2fr);
     grid-template-areas:
       'file action status';
   }
 
   .extract-controls {
-    grid-template-columns: minmax(16rem, 1.8fr) minmax(12rem, 1fr) auto minmax(18rem, 1.5fr);
+    grid-template-columns: minmax(20rem, 2.4fr) minmax(14rem, 1.2fr) auto minmax(18rem, 1.2fr);
     grid-template-areas:
       'file pages action status';
   }
@@ -312,22 +317,27 @@ import Input from '../../components/ui/Input.astro';
     grid-area: names;
     margin: 0;
     align-self: center;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
   }
 
   .control-actions {
     grid-area: action;
     margin: 0;
     align-self: center;
-    justify-self: start;
+    justify-self: center;
   }
 
   .control-status {
     grid-area: status;
     margin: 0;
     align-self: center;
+    min-width: 0;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
   }
 
   .preview-head {
@@ -351,9 +361,9 @@ import Input from '../../components/ui/Input.astro';
   .preview-counter,
   .preview-footer {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
-    padding: 0.45rem 0.1rem;
+    padding: 0.55rem 0.2rem;
     color: var(--text-secondary);
     font-family: var(--font-mono);
     font-size: 0.84rem;
@@ -362,7 +372,7 @@ import Input from '../../components/ui/Input.astro';
   }
 
   .preview-footer {
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr 1fr auto;
     gap: var(--space-sm);
   }
 
@@ -374,6 +384,14 @@ import Input from '../../components/ui/Input.astro';
   .preview-counter span:last-child,
   .preview-footer span:nth-child(3) {
     justify-self: end;
+  }
+
+  .preview-counter span:first-child {
+    grid-column: 2;
+  }
+
+  .preview-counter span:last-child {
+    grid-column: 3;
   }
 
   .page-button {
@@ -393,7 +411,7 @@ import Input from '../../components/ui/Input.astro';
 
   .pdf-preview {
     width: 100%;
-    min-height: clamp(42rem, 80vh, 78rem);
+    min-height: clamp(48rem, 84vh, 90rem);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--bg-inset) 90%, transparent);
@@ -417,11 +435,11 @@ import Input from '../../components/ui/Input.astro';
     }
 
     .control-actions {
-      justify-self: start;
+      justify-self: center;
     }
 
     .pdf-preview {
-      min-height: 30rem;
+      min-height: 34rem;
     }
   }
 </style>
@@ -522,7 +540,10 @@ import Input from '../../components/ui/Input.astro';
     const pageLabel = `Page ${state.page}`;
     const ratioLabel = `Page ${state.page}/${state.totalPages}`;
 
-    frame.src = makePreviewSrc(state.fileUrl, state.page);
+    frame.src = 'about:blank';
+    requestAnimationFrame(() => {
+      frame.src = makePreviewSrc(state.fileUrl ?? '', state.page);
+    });
     frame.hidden = false;
     empty.hidden = true;
     top.hidden = false;
