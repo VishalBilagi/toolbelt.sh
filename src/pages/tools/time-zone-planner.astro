@@ -1,0 +1,512 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="Time Zone Planner">
+  <section class="planner-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Plan across regions</h2>
+          <p class="ui-card__description">Compare one base time across many timezones and share the exact setup.</p>
+        </div>
+        <Badge tone="neutral">Shareable</Badge>
+      </div>
+
+      <div class="controls-grid">
+        <Field label="Base timezone" htmlFor="planner-base-timezone" hint="Use IANA zones like America/New_York">
+          <Input id="planner-base-timezone" list="timezone-suggestions" autocomplete="off" />
+        </Field>
+
+        <Field label="Date & time" htmlFor="planner-date-time">
+          <Input id="planner-date-time" type="datetime-local" />
+        </Field>
+      </div>
+
+      <Field label="Time shift (hours)" htmlFor="planner-shift" hint="Slide to test nearby options without retyping the date.">
+        <div class="slider-row">
+          <input id="planner-shift" type="range" min="-24" max="24" step="1" value="0" />
+          <output id="planner-shift-output" for="planner-shift">+0h</output>
+        </div>
+      </Field>
+
+      <div class="work-hours-grid">
+        <Field label="Workday start" htmlFor="planner-work-start" hint="Used for overlap hints in cards.">
+          <div class="slider-row">
+            <input id="planner-work-start" type="range" min="0" max="23" step="1" value="9" />
+            <output id="planner-work-start-output" for="planner-work-start">09:00</output>
+          </div>
+        </Field>
+
+        <Field label="Workday end" htmlFor="planner-work-end">
+          <div class="slider-row">
+            <input id="planner-work-end" type="range" min="1" max="24" step="1" value="18" />
+            <output id="planner-work-end-output" for="planner-work-end">18:00</output>
+          </div>
+        </Field>
+      </div>
+
+      <Field
+        label="Comparison timezones"
+        htmlFor="planner-zones"
+        hint="Comma or newline separated values. Example: UTC, Europe/London, Asia/Tokyo"
+      >
+        <Textarea id="planner-zones" rows={5} />
+      </Field>
+
+      <div class="actions">
+        <Button id="planner-now" variant="secondary">Use current time</Button>
+        <Button id="planner-update" variant="primary">Update planner</Button>
+        <Button id="planner-copy-link" variant="ghost">Copy share link</Button>
+      </div>
+
+      <p id="planner-status" class="status" aria-live="polite"></p>
+
+      <div class="share-link-wrap">
+        <label for="planner-share-link">Shareable link</label>
+        <Input id="planner-share-link" readonly />
+      </div>
+
+      <datalist id="timezone-suggestions">
+        <option value="UTC" />
+        <option value="America/New_York" />
+        <option value="America/Los_Angeles" />
+        <option value="Europe/London" />
+        <option value="Europe/Berlin" />
+        <option value="Asia/Kolkata" />
+        <option value="Asia/Tokyo" />
+        <option value="Australia/Sydney" />
+      </datalist>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Zone comparison</h2>
+          <p class="ui-card__description">Each card shows the shifted time and overlap hint for your work window.</p>
+        </div>
+      </div>
+
+      <div id="planner-results" class="results-grid" aria-live="polite"></div>
+    </Card>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 104rem) !important;
+    max-width: min(100%, 104rem) !important;
+  }
+
+  .planner-grid {
+    display: grid;
+    grid-template-columns: minmax(24rem, 36rem) minmax(0, 1fr);
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .controls-grid,
+  .work-hours-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .slider-row input[type='range'] {
+    width: 100%;
+  }
+
+  .slider-row output {
+    color: var(--text-secondary);
+    min-width: 3.6rem;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .status {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+    min-height: 1.25rem;
+  }
+
+  .share-link-wrap {
+    margin-top: var(--space-sm);
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .share-link-wrap label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .results-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .zone-card {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    background: color-mix(in srgb, var(--bg-inset) 86%, transparent);
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .zone-card h3,
+  .zone-time,
+  .zone-date,
+  .zone-offset {
+    margin: 0;
+  }
+
+  .zone-time {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .zone-date,
+  .zone-offset {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .work-tag {
+    width: fit-content;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.76rem;
+    border: 1px solid transparent;
+  }
+
+  .work-tag--good {
+    color: var(--state-success);
+    border-color: color-mix(in srgb, var(--state-success) 45%, transparent);
+    background: color-mix(in srgb, var(--state-success) 10%, transparent);
+  }
+
+  .work-tag--warn {
+    color: var(--state-warning);
+    border-color: color-mix(in srgb, var(--state-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--state-warning) 10%, transparent);
+  }
+
+  .work-tag--bad {
+    color: var(--state-danger);
+    border-color: color-mix(in srgb, var(--state-danger) 45%, transparent);
+    background: color-mix(in srgb, var(--state-danger) 10%, transparent);
+  }
+
+  @media (max-width: 1180px) {
+    .planner-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  interface PlannerRow {
+    timeZone: string;
+    time: string;
+    dateLabel: string;
+    offsetLabel: string;
+    hour: number;
+  }
+
+  interface PlannerState {
+    baseTimeZone: string;
+    dateTimeLocal: string;
+    zones: string[];
+    shiftHours: number;
+    workdayStartHour: number;
+    workdayEndHour: number;
+  }
+
+  let logic: typeof import('../../tools/time-zone-planner/logic') | null = null;
+
+  const getLogic = async () => {
+    if (!logic) {
+      logic = await import('../../tools/time-zone-planner/logic');
+    }
+
+    return logic;
+  };
+
+  const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
+  const baseTimeZoneInput = byId<HTMLInputElement>('planner-base-timezone');
+  const dateTimeInput = byId<HTMLInputElement>('planner-date-time');
+  const zonesInput = byId<HTMLTextAreaElement>('planner-zones');
+  const shiftInput = byId<HTMLInputElement>('planner-shift');
+  const shiftOutput = byId<HTMLOutputElement>('planner-shift-output');
+  const workStartInput = byId<HTMLInputElement>('planner-work-start');
+  const workStartOutput = byId<HTMLOutputElement>('planner-work-start-output');
+  const workEndInput = byId<HTMLInputElement>('planner-work-end');
+  const workEndOutput = byId<HTMLOutputElement>('planner-work-end-output');
+  const shareLinkInput = byId<HTMLInputElement>('planner-share-link');
+  const resultsNode = byId<HTMLElement>('planner-results');
+  const statusNode = byId<HTMLElement>('planner-status');
+
+  const setStatus = (message: string): void => {
+    if (statusNode) statusNode.textContent = message;
+  };
+
+  const getDefaultTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+  const parseZonesInput = (value: string): string[] => value.split(/[\n,]/g).map((zone) => zone.trim());
+
+  const formatHourLabel = (hour: number): string => `${String(hour).padStart(2, '0')}:00`;
+
+  const renderSliderLabels = (): void => {
+    if (shiftInput && shiftOutput) {
+      const value = Number.parseInt(shiftInput.value, 10);
+      shiftOutput.value = `${value >= 0 ? '+' : ''}${value}h`;
+    }
+
+    if (workStartInput && workStartOutput) {
+      workStartOutput.value = formatHourLabel(Number.parseInt(workStartInput.value, 10));
+    }
+
+    if (workEndInput && workEndOutput) {
+      const end = Number.parseInt(workEndInput.value, 10);
+      workEndOutput.value = `${formatHourLabel(end % 24)}${end === 24 ? ' (+1d)' : ''}`;
+    }
+  };
+
+  const ensureValidWorkWindow = (): void => {
+    if (!workStartInput || !workEndInput) return;
+
+    const start = Number.parseInt(workStartInput.value, 10);
+    const end = Number.parseInt(workEndInput.value, 10);
+
+    if (end <= start) {
+      workEndInput.value = String(Math.min(24, start + 1));
+    }
+  };
+
+  const getWorkTag = (
+    hour: number,
+    workdayStartHour: number,
+    workdayEndHour: number
+  ): { label: string; tone: 'good' | 'warn' | 'bad' } => {
+    if (hour >= workdayStartHour && hour < workdayEndHour) {
+      return { label: 'Inside work window', tone: 'good' };
+    }
+
+    if (hour >= workdayStartHour - 1 && hour < workdayEndHour + 2) {
+      return { label: 'Near work window', tone: 'warn' };
+    }
+
+    return { label: 'Outside work window', tone: 'bad' };
+  };
+
+  const formatRow = (instant: Date, timeZone: string): PlannerRow => {
+    const timeFormatter = new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      weekday: 'short',
+      month: 'short',
+      day: '2-digit'
+    });
+
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZoneName: 'shortOffset'
+    }).formatToParts(instant);
+
+    const hourPart = parts.find((part) => part.type === 'hour')?.value ?? '00';
+    const offsetLabel = parts.find((part) => part.type === 'timeZoneName')?.value ?? '';
+
+    return {
+      timeZone,
+      time: timeFormatter.format(instant),
+      dateLabel: dateFormatter.format(instant),
+      offsetLabel,
+      hour: Number.parseInt(hourPart, 10)
+    };
+  };
+
+  const renderRows = (rows: PlannerRow[], state: PlannerState): void => {
+    if (!resultsNode) return;
+
+    if (rows.length === 0) {
+      resultsNode.innerHTML = '<p class="zone-date">Add one or more comparison zones to see converted times.</p>';
+      return;
+    }
+
+    resultsNode.innerHTML = rows
+      .map((row) => {
+        const work = getWorkTag(row.hour, state.workdayStartHour, state.workdayEndHour);
+
+        return `
+          <article class="zone-card">
+            <h3>${row.timeZone}</h3>
+            <p class="zone-time">${row.time}</p>
+            <p class="zone-date">${row.dateLabel}</p>
+            <p class="zone-offset">${row.offsetLabel}</p>
+            <p class="work-tag work-tag--${work.tone}">${work.label}</p>
+          </article>
+        `;
+      })
+      .join('');
+  };
+
+  const readState = async (): Promise<PlannerState | null> => {
+    const plannerLogic = await getLogic();
+
+    const baseTimeZone = (baseTimeZoneInput?.value ?? '').trim();
+    if (!plannerLogic.isValidTimeZone(baseTimeZone)) {
+      setStatus('Choose a valid base timezone (for example: Europe/London).');
+      return null;
+    }
+
+    const dateTimeLocal = dateTimeInput?.value ?? '';
+    if (!dateTimeLocal) {
+      setStatus('Choose a date and time first.');
+      return null;
+    }
+
+    ensureValidWorkWindow();
+    renderSliderLabels();
+
+    const shiftHours = Number.parseInt(shiftInput?.value ?? '0', 10);
+    const workdayStartHour = Number.parseInt(workStartInput?.value ?? '9', 10);
+    const workdayEndHour = Number.parseInt(workEndInput?.value ?? '18', 10);
+
+    return {
+      baseTimeZone,
+      dateTimeLocal,
+      zones: plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')),
+      shiftHours,
+      workdayStartHour,
+      workdayEndHour
+    };
+  };
+
+  const syncShareLink = async (state: PlannerState): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const query = plannerLogic.buildShareQuery(state);
+    const shareUrl = `${window.location.origin}${window.location.pathname}${query}`;
+
+    if (shareLinkInput) shareLinkInput.value = shareUrl;
+    window.history.replaceState({}, '', `${window.location.pathname}${query}`);
+  };
+
+  const updatePlanner = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const state = await readState();
+
+    if (!state) {
+      renderRows([], {
+        baseTimeZone: 'UTC',
+        dateTimeLocal: '',
+        zones: [],
+        shiftHours: 0,
+        workdayStartHour: 9,
+        workdayEndHour: 18
+      });
+      return;
+    }
+
+    try {
+      const baseInstant = plannerLogic.dateTimeLocalToInstant(state.dateTimeLocal, state.baseTimeZone);
+      const shiftedInstant = new Date(baseInstant.getTime() + state.shiftHours * 60 * 60 * 1000);
+      const finalZones = plannerLogic.normalizeTimeZones([state.baseTimeZone, ...state.zones]);
+      const rows = finalZones.map((zone) => formatRow(shiftedInstant, zone));
+
+      renderRows(rows, state);
+      await syncShareLink(state);
+      setStatus(`Showing ${rows.length} timezone${rows.length === 1 ? '' : 's'} at ${shiftedInstant.toISOString()}.`);
+    } catch (error) {
+      renderRows([], state);
+      setStatus(error instanceof Error ? error.message : 'Unable to convert time.');
+    }
+  };
+
+  const populateNow = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const baseTimeZone = (baseTimeZoneInput?.value ?? '').trim() || getDefaultTimeZone();
+
+    if (!plannerLogic.isValidTimeZone(baseTimeZone)) {
+      setStatus('Unable to determine a valid timezone for current time.');
+      return;
+    }
+
+    if (baseTimeZoneInput) baseTimeZoneInput.value = baseTimeZone;
+    if (dateTimeInput) dateTimeInput.value = plannerLogic.instantToDateTimeLocal(new Date(), baseTimeZone);
+    await updatePlanner();
+  };
+
+  const hydrateFromQuery = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const parsed = plannerLogic.parseShareState(new URLSearchParams(window.location.search), getDefaultTimeZone());
+
+    if (baseTimeZoneInput) baseTimeZoneInput.value = parsed.baseTimeZone;
+    if (zonesInput) zonesInput.value = parsed.zones.join('\n');
+    if (shiftInput) shiftInput.value = String(parsed.shiftHours);
+    if (workStartInput) workStartInput.value = String(parsed.workdayStartHour);
+    if (workEndInput) workEndInput.value = String(parsed.workdayEndHour);
+
+    if (dateTimeInput) {
+      dateTimeInput.value = parsed.dateTimeLocal || plannerLogic.instantToDateTimeLocal(new Date(), parsed.baseTimeZone);
+    }
+
+    renderSliderLabels();
+    await updatePlanner();
+  };
+
+  const attachLiveUpdate = (element: HTMLElement | null): void => {
+    element?.addEventListener('input', () => {
+      renderSliderLabels();
+      void updatePlanner();
+    });
+  };
+
+  document.getElementById('planner-update')?.addEventListener('click', () => void updatePlanner());
+  document.getElementById('planner-now')?.addEventListener('click', () => void populateNow());
+
+  document.getElementById('planner-copy-link')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(shareLinkInput?.value ?? '');
+      setStatus('Share link copied to clipboard.');
+    } catch {
+      setStatus('Could not copy link automatically. You can copy it manually below.');
+    }
+  });
+
+  attachLiveUpdate(shiftInput);
+  attachLiveUpdate(workStartInput);
+  attachLiveUpdate(workEndInput);
+
+  void hydrateFromQuery();
+</script>

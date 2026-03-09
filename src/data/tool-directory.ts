@@ -105,6 +105,13 @@ export const toolSections: ToolSection[] = [
         icon: 'clock'
       },
       {
+        name: 'Time Zone Planner',
+        href: '/tools/time-zone-planner',
+        description: 'Compare meeting or game times across multiple time zones with shareable URLs.',
+        tags: ['timezone', 'meeting', 'schedule', 'world-clock', 'planner', 'share'],
+        icon: 'clock'
+      },
+      {
         name: 'Data Utilities',
         href: '/tools/data-utils',
         description: 'JSON format/validate/diff and CSV ↔ JSON conversion in one workspace.',
