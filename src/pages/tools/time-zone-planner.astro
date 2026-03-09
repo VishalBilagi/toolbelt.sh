@@ -4,6 +4,7 @@ import Button from '../../components/ui/Button.astro';
 import Card from '../../components/ui/Card.astro';
 import Field from '../../components/ui/Field.astro';
 import Input from '../../components/ui/Input.astro';
+import 'leaflet/dist/leaflet.css';
 ---
 
 <ToolLayout title="Time Zone Planner">
@@ -339,7 +340,6 @@ import Input from '../../components/ui/Input.astro';
 
   const getLeaflet = async (): Promise<LeafletModule> => {
     if (!leaflet) {
-      await import('leaflet/dist/leaflet.css');
       leaflet = await import('leaflet');
     }
 
