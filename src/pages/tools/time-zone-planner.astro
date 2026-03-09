@@ -12,6 +12,17 @@ import 'leaflet/dist/leaflet.css';
     <Card interactive={false}>
       <div class="ui-card__header">
         <div>
+          <h2 class="ui-card__title">Zone comparison</h2>
+          <p class="ui-card__description">Each card shows shifted time and overlap quality in your work window.</p>
+        </div>
+      </div>
+
+      <div id="planner-results" class="results-grid" aria-live="polite"></div>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
           <h2 class="ui-card__title">Plan across regions</h2>
           <p class="ui-card__description">Compare one base time across many timezones and share the exact setup.</p>
         </div>
@@ -87,16 +98,6 @@ import 'leaflet/dist/leaflet.css';
       <p id="planner-status" class="status" aria-live="polite"></p>
     </Card>
 
-    <Card interactive={false}>
-      <div class="ui-card__header">
-        <div>
-          <h2 class="ui-card__title">Zone comparison</h2>
-          <p class="ui-card__description">Each card shows shifted time and overlap quality in your work window.</p>
-        </div>
-      </div>
-
-      <div id="planner-results" class="results-grid" aria-live="polite"></div>
-    </Card>
   </section>
 </ToolLayout>
 
@@ -108,8 +109,8 @@ import 'leaflet/dist/leaflet.css';
 
   .planner-grid {
     display: grid;
-    grid-template-columns: minmax(24rem, 40rem) minmax(0, 1fr);
     gap: var(--space-xl);
+    grid-template-columns: 1fr;
     align-items: start;
   }
 
@@ -270,7 +271,6 @@ import 'leaflet/dist/leaflet.css';
   }
 
   @media (max-width: 1180px) {
-    .planner-grid,
     .controls-grid,
     .sliders-grid {
       grid-template-columns: 1fr;
