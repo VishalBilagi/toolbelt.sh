@@ -1,11 +1,9 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
-import Badge from '../../components/ui/Badge.astro';
 import Button from '../../components/ui/Button.astro';
 import Card from '../../components/ui/Card.astro';
 import Field from '../../components/ui/Field.astro';
 import Input from '../../components/ui/Input.astro';
-import Textarea from '../../components/ui/Textarea.astro';
 ---
 
 <ToolLayout title="Time Zone Planner">
@@ -16,12 +14,12 @@ import Textarea from '../../components/ui/Textarea.astro';
           <h2 class="ui-card__title">Plan across regions</h2>
           <p class="ui-card__description">Compare one base time across many timezones and share the exact setup.</p>
         </div>
-        <Badge tone="neutral">Shareable</Badge>
       </div>
 
       <div class="controls-grid">
-        <Field label="Base timezone" htmlFor="planner-base-timezone" hint="Use IANA zones like America/New_York">
-          <Input id="planner-base-timezone" list="timezone-suggestions" autocomplete="off" />
+        <Field label="Base timezone" htmlFor="planner-base-timezone">
+          <Input id="planner-base-timezone" autocomplete="off" />
+          <p class="control-hint">Select from map pins below, or type an IANA zone.</p>
         </Field>
 
         <Field label="Date & time" htmlFor="planner-date-time">
@@ -29,35 +27,55 @@ import Textarea from '../../components/ui/Textarea.astro';
         </Field>
       </div>
 
-      <Field label="Time shift (hours)" htmlFor="planner-shift" hint="Slide to test nearby options without retyping the date.">
-        <div class="slider-row">
-          <input id="planner-shift" type="range" min="-24" max="24" step="1" value="0" />
-          <output id="planner-shift-output" for="planner-shift">+0h</output>
+      <section class="map-section" aria-labelledby="planner-map-title">
+        <div class="map-heading">
+          <h3 id="planner-map-title">Timezone map pins</h3>
+          <p>Choose mode, then tap a city pin to set base timezone or add/remove comparisons.</p>
         </div>
-      </Field>
 
-      <div class="work-hours-grid">
-        <Field label="Workday start" htmlFor="planner-work-start" hint="Used for overlap hints in cards.">
-          <div class="slider-row">
+        <div class="map-mode-row" role="radiogroup" aria-label="Pin action mode">
+          <label>
+            <input id="planner-mode-base" type="radio" name="planner-pin-mode" value="base" checked />
+            <span>Set base timezone</span>
+          </label>
+          <label>
+            <input id="planner-mode-compare" type="radio" name="planner-pin-mode" value="compare" />
+            <span>Toggle comparison zones</span>
+          </label>
+        </div>
+
+        <div class="world-map" id="planner-map"></div>
+      </section>
+
+      <div class="sliders-grid">
+        <Field label="Time shift (hours)" htmlFor="planner-shift">
+          <div class="slider-line">
+            <input id="planner-shift" type="range" min="-24" max="24" step="1" value="0" />
+            <output id="planner-shift-output" for="planner-shift">+0h</output>
+          </div>
+          <p class="control-hint">Slide to test nearby options without retyping the date.</p>
+        </Field>
+
+        <Field label="Workday start" htmlFor="planner-work-start">
+          <div class="slider-line">
             <input id="planner-work-start" type="range" min="0" max="23" step="1" value="9" />
             <output id="planner-work-start-output" for="planner-work-start">09:00</output>
           </div>
+          <p class="control-hint">Used for overlap hints in cards.</p>
         </Field>
 
         <Field label="Workday end" htmlFor="planner-work-end">
-          <div class="slider-row">
+          <div class="slider-line">
             <input id="planner-work-end" type="range" min="1" max="24" step="1" value="18" />
             <output id="planner-work-end-output" for="planner-work-end">18:00</output>
           </div>
+          <p class="control-hint">Must be after workday start.</p>
         </Field>
       </div>
 
-      <Field
-        label="Comparison timezones"
-        htmlFor="planner-zones"
-        hint="Comma or newline separated values. Example: UTC, Europe/London, Asia/Tokyo"
-      >
-        <Textarea id="planner-zones" rows={5} />
+      <Field label="Comparison timezones" htmlFor="planner-zones">
+        <Input id="planner-zones" />
+        <p class="control-hint">Auto-filled from map pins. You can also type comma-separated zones.</p>
       </Field>
 
       <div class="actions">
@@ -67,22 +85,6 @@ import Textarea from '../../components/ui/Textarea.astro';
       </div>
 
       <p id="planner-status" class="status" aria-live="polite"></p>
-
-      <div class="share-link-wrap">
-        <label for="planner-share-link">Shareable link</label>
-        <Input id="planner-share-link" readonly />
-      </div>
-
-      <datalist id="timezone-suggestions">
-        <option value="UTC" />
-        <option value="America/New_York" />
-        <option value="America/Los_Angeles" />
-        <option value="Europe/London" />
-        <option value="Europe/Berlin" />
-        <option value="Asia/Kolkata" />
-        <option value="Asia/Tokyo" />
-        <option value="Australia/Sydney" />
-      </datalist>
     </Card>
 
     <Card interactive={false}>
@@ -106,33 +108,105 @@ import Textarea from '../../components/ui/Textarea.astro';
 
   .planner-grid {
     display: grid;
-    grid-template-columns: minmax(24rem, 36rem) minmax(0, 1fr);
+    grid-template-columns: minmax(24rem, 40rem) minmax(0, 1fr);
     gap: var(--space-xl);
     align-items: start;
   }
 
   .controls-grid,
-  .work-hours-grid {
+  .sliders-grid {
     display: grid;
     gap: var(--space-md);
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .slider-row {
+  .sliders-grid :global(.ui-field):first-child {
+    grid-column: 1 / -1;
+  }
+
+  .control-hint {
+    margin: var(--space-xs) 0 0;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+  }
+
+  .map-section {
+    margin: var(--space-md) 0;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .map-heading h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .map-heading p {
+    margin: var(--space-xs) 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .map-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .map-mode-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--text-secondary);
+  }
+
+  .world-map {
+    position: relative;
+    width: 100%;
+    min-height: 15rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 22% 44%, color-mix(in srgb, var(--brand) 18%, transparent) 0 18%, transparent 20%),
+      radial-gradient(circle at 51% 42%, color-mix(in srgb, var(--brand) 14%, transparent) 0 20%, transparent 22%),
+      radial-gradient(circle at 78% 52%, color-mix(in srgb, var(--brand) 15%, transparent) 0 17%, transparent 19%),
+      linear-gradient(130deg, color-mix(in srgb, var(--bg-surface) 88%, transparent), color-mix(in srgb, var(--bg-inset) 90%, transparent));
+  }
+
+  .map-pin {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.45rem;
+    cursor: pointer;
+  }
+
+  .map-pin--base {
+    border-color: color-mix(in srgb, var(--brand) 70%, transparent);
+    background: color-mix(in srgb, var(--brand) 20%, var(--bg-surface));
+  }
+
+  .map-pin--selected {
+    border-color: color-mix(in srgb, var(--state-success) 55%, transparent);
+    background: color-mix(in srgb, var(--state-success) 18%, var(--bg-surface));
+  }
+
+  .slider-line {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-sm);
     align-items: center;
   }
 
-  .slider-row input[type='range'] {
-    width: 100%;
-  }
-
-  .slider-row output {
-    color: var(--text-secondary);
-    min-width: 3.6rem;
+  .slider-line output {
+    min-width: 4.6rem;
     text-align: right;
+    color: var(--text-secondary);
     font-family: var(--font-mono);
     font-size: 0.84rem;
   }
@@ -148,17 +222,6 @@ import Textarea from '../../components/ui/Textarea.astro';
     margin-top: var(--space-sm);
     color: var(--text-secondary);
     min-height: 1.25rem;
-  }
-
-  .share-link-wrap {
-    margin-top: var(--space-sm);
-    display: grid;
-    gap: var(--space-xs);
-  }
-
-  .share-link-wrap label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
   }
 
   .results-grid {
@@ -221,7 +284,9 @@ import Textarea from '../../components/ui/Textarea.astro';
   }
 
   @media (max-width: 1180px) {
-    .planner-grid {
+    .planner-grid,
+    .controls-grid,
+    .sliders-grid {
       grid-template-columns: 1fr;
     }
   }
@@ -245,6 +310,26 @@ import Textarea from '../../components/ui/Textarea.astro';
     workdayEndHour: number;
   }
 
+  interface MapPin {
+    label: string;
+    timeZone: string;
+    left: number;
+    top: number;
+  }
+
+  const MAP_PINS: MapPin[] = [
+    { label: 'LA', timeZone: 'America/Los_Angeles', left: 12, top: 45 },
+    { label: 'NYC', timeZone: 'America/New_York', left: 23, top: 40 },
+    { label: 'Rio', timeZone: 'America/Sao_Paulo', left: 31, top: 66 },
+    { label: 'LON', timeZone: 'Europe/London', left: 47, top: 34 },
+    { label: 'BER', timeZone: 'Europe/Berlin', left: 52, top: 35 },
+    { label: 'DXB', timeZone: 'Asia/Dubai', left: 60, top: 45 },
+    { label: 'DEL', timeZone: 'Asia/Kolkata', left: 66, top: 47 },
+    { label: 'BKK', timeZone: 'Asia/Bangkok', left: 72, top: 50 },
+    { label: 'TYO', timeZone: 'Asia/Tokyo', left: 81, top: 42 },
+    { label: 'SYD', timeZone: 'Australia/Sydney', left: 86, top: 73 }
+  ];
+
   let logic: typeof import('../../tools/time-zone-planner/logic') | null = null;
 
   const getLogic = async () => {
@@ -258,23 +343,28 @@ import Textarea from '../../components/ui/Textarea.astro';
   const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
   const baseTimeZoneInput = byId<HTMLInputElement>('planner-base-timezone');
   const dateTimeInput = byId<HTMLInputElement>('planner-date-time');
-  const zonesInput = byId<HTMLTextAreaElement>('planner-zones');
+  const zonesInput = byId<HTMLInputElement>('planner-zones');
   const shiftInput = byId<HTMLInputElement>('planner-shift');
   const shiftOutput = byId<HTMLOutputElement>('planner-shift-output');
   const workStartInput = byId<HTMLInputElement>('planner-work-start');
   const workStartOutput = byId<HTMLOutputElement>('planner-work-start-output');
   const workEndInput = byId<HTMLInputElement>('planner-work-end');
   const workEndOutput = byId<HTMLOutputElement>('planner-work-end-output');
-  const shareLinkInput = byId<HTMLInputElement>('planner-share-link');
   const resultsNode = byId<HTMLElement>('planner-results');
   const statusNode = byId<HTMLElement>('planner-status');
+  const mapNode = byId<HTMLElement>('planner-map');
+
+  const getPinMode = (): 'base' | 'compare' => {
+    const mode = (document.querySelector('input[name="planner-pin-mode"]:checked') as HTMLInputElement | null)?.value;
+    return mode === 'compare' ? 'compare' : 'base';
+  };
 
   const setStatus = (message: string): void => {
     if (statusNode) statusNode.textContent = message;
   };
 
   const getDefaultTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
-  const parseZonesInput = (value: string): string[] => value.split(/[\n,]/g).map((zone) => zone.trim());
+  const parseZonesInput = (value: string): string[] => value.split(',').map((zone) => zone.trim());
 
   const formatHourLabel = (hour: number): string => `${String(hour).padStart(2, '0')}:00`;
 
@@ -299,7 +389,6 @@ import Textarea from '../../components/ui/Textarea.astro';
 
     const start = Number.parseInt(workStartInput.value, 10);
     const end = Number.parseInt(workEndInput.value, 10);
-
     if (end <= start) {
       workEndInput.value = String(Math.min(24, start + 1));
     }
@@ -310,14 +399,8 @@ import Textarea from '../../components/ui/Textarea.astro';
     workdayStartHour: number,
     workdayEndHour: number
   ): { label: string; tone: 'good' | 'warn' | 'bad' } => {
-    if (hour >= workdayStartHour && hour < workdayEndHour) {
-      return { label: 'Inside work window', tone: 'good' };
-    }
-
-    if (hour >= workdayStartHour - 1 && hour < workdayEndHour + 2) {
-      return { label: 'Near work window', tone: 'warn' };
-    }
-
+    if (hour >= workdayStartHour && hour < workdayEndHour) return { label: 'Inside work window', tone: 'good' };
+    if (hour >= workdayStartHour - 1 && hour < workdayEndHour + 2) return { label: 'Near work window', tone: 'warn' };
     return { label: 'Outside work window', tone: 'bad' };
   };
 
@@ -360,7 +443,7 @@ import Textarea from '../../components/ui/Textarea.astro';
     if (!resultsNode) return;
 
     if (rows.length === 0) {
-      resultsNode.innerHTML = '<p class="zone-date">Add one or more comparison zones to see converted times.</p>';
+      resultsNode.innerHTML = '<p class="zone-date">Use map pins or type zones to compare times.</p>';
       return;
     }
 
@@ -383,8 +466,8 @@ import Textarea from '../../components/ui/Textarea.astro';
 
   const readState = async (): Promise<PlannerState | null> => {
     const plannerLogic = await getLogic();
-
     const baseTimeZone = (baseTimeZoneInput?.value ?? '').trim();
+
     if (!plannerLogic.isValidTimeZone(baseTimeZone)) {
       setStatus('Choose a valid base timezone (for example: Europe/London).');
       return null;
@@ -399,27 +482,63 @@ import Textarea from '../../components/ui/Textarea.astro';
     ensureValidWorkWindow();
     renderSliderLabels();
 
-    const shiftHours = Number.parseInt(shiftInput?.value ?? '0', 10);
-    const workdayStartHour = Number.parseInt(workStartInput?.value ?? '9', 10);
-    const workdayEndHour = Number.parseInt(workEndInput?.value ?? '18', 10);
-
     return {
       baseTimeZone,
       dateTimeLocal,
       zones: plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')),
-      shiftHours,
-      workdayStartHour,
-      workdayEndHour
+      shiftHours: Number.parseInt(shiftInput?.value ?? '0', 10),
+      workdayStartHour: Number.parseInt(workStartInput?.value ?? '9', 10),
+      workdayEndHour: Number.parseInt(workEndInput?.value ?? '18', 10)
     };
   };
 
-  const syncShareLink = async (state: PlannerState): Promise<void> => {
+  const buildShareUrl = async (state: PlannerState): Promise<string> => {
     const plannerLogic = await getLogic();
     const query = plannerLogic.buildShareQuery(state);
-    const shareUrl = `${window.location.origin}${window.location.pathname}${query}`;
-
-    if (shareLinkInput) shareLinkInput.value = shareUrl;
     window.history.replaceState({}, '', `${window.location.pathname}${query}`);
+    return `${window.location.origin}${window.location.pathname}${query}`;
+  };
+
+  const renderMapPins = async (): Promise<void> => {
+    if (!mapNode) return;
+
+    const plannerLogic = await getLogic();
+    const base = (baseTimeZoneInput?.value ?? '').trim();
+    const selected = new Set(plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')));
+
+    mapNode.innerHTML = MAP_PINS.map((pin) => {
+      const classes = ['map-pin'];
+      if (pin.timeZone === base) {
+        classes.push('map-pin--base');
+      } else if (selected.has(pin.timeZone)) {
+        classes.push('map-pin--selected');
+      }
+
+      return `<button type="button" class="${classes.join(' ')}" style="left:${pin.left}%;top:${pin.top}%" data-zone="${pin.timeZone}" title="${pin.timeZone}">${pin.label}</button>`;
+    }).join('');
+
+    mapNode.querySelectorAll('button[data-zone]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const zone = (button as HTMLButtonElement).dataset.zone ?? '';
+        if (!zone) return;
+
+        if (getPinMode() === 'base') {
+          if (baseTimeZoneInput) baseTimeZoneInput.value = zone;
+        } else {
+          const current = parseZonesInput(zonesInput?.value ?? '');
+          const set = new Set(current);
+          if (set.has(zone)) {
+            set.delete(zone);
+          } else {
+            set.add(zone);
+          }
+
+          if (zonesInput) zonesInput.value = Array.from(set).join(', ');
+        }
+
+        void updatePlanner();
+      });
+    });
   };
 
   const updatePlanner = async (): Promise<void> => {
@@ -427,6 +546,7 @@ import Textarea from '../../components/ui/Textarea.astro';
     const state = await readState();
 
     if (!state) {
+      await renderMapPins();
       renderRows([], {
         baseTimeZone: 'UTC',
         dateTimeLocal: '',
@@ -444,12 +564,27 @@ import Textarea from '../../components/ui/Textarea.astro';
       const finalZones = plannerLogic.normalizeTimeZones([state.baseTimeZone, ...state.zones]);
       const rows = finalZones.map((zone) => formatRow(shiftedInstant, zone));
 
+      await buildShareUrl(state);
+      await renderMapPins();
       renderRows(rows, state);
-      await syncShareLink(state);
       setStatus(`Showing ${rows.length} timezone${rows.length === 1 ? '' : 's'} at ${shiftedInstant.toISOString()}.`);
     } catch (error) {
+      await renderMapPins();
       renderRows([], state);
       setStatus(error instanceof Error ? error.message : 'Unable to convert time.');
+    }
+  };
+
+  const copyShareLink = async (): Promise<void> => {
+    const state = await readState();
+    if (!state) return;
+
+    try {
+      const shareUrl = await buildShareUrl(state);
+      await navigator.clipboard.writeText(shareUrl);
+      setStatus('Share link copied to clipboard.');
+    } catch {
+      setStatus('Could not copy the share link automatically.');
     }
   };
 
@@ -472,14 +607,14 @@ import Textarea from '../../components/ui/Textarea.astro';
     const parsed = plannerLogic.parseShareState(new URLSearchParams(window.location.search), getDefaultTimeZone());
 
     if (baseTimeZoneInput) baseTimeZoneInput.value = parsed.baseTimeZone;
-    if (zonesInput) zonesInput.value = parsed.zones.join('\n');
-    if (shiftInput) shiftInput.value = String(parsed.shiftHours);
-    if (workStartInput) workStartInput.value = String(parsed.workdayStartHour);
-    if (workEndInput) workEndInput.value = String(parsed.workdayEndHour);
-
     if (dateTimeInput) {
       dateTimeInput.value = parsed.dateTimeLocal || plannerLogic.instantToDateTimeLocal(new Date(), parsed.baseTimeZone);
     }
+
+    if (zonesInput) zonesInput.value = parsed.zones.join(', ');
+    if (shiftInput) shiftInput.value = String(parsed.shiftHours);
+    if (workStartInput) workStartInput.value = String(parsed.workdayStartHour);
+    if (workEndInput) workEndInput.value = String(parsed.workdayEndHour);
 
     renderSliderLabels();
     await updatePlanner();
@@ -494,19 +629,18 @@ import Textarea from '../../components/ui/Textarea.astro';
 
   document.getElementById('planner-update')?.addEventListener('click', () => void updatePlanner());
   document.getElementById('planner-now')?.addEventListener('click', () => void populateNow());
-
-  document.getElementById('planner-copy-link')?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(shareLinkInput?.value ?? '');
-      setStatus('Share link copied to clipboard.');
-    } catch {
-      setStatus('Could not copy link automatically. You can copy it manually below.');
-    }
-  });
+  document.getElementById('planner-copy-link')?.addEventListener('click', () => void copyShareLink());
 
   attachLiveUpdate(shiftInput);
   attachLiveUpdate(workStartInput);
   attachLiveUpdate(workEndInput);
+  attachLiveUpdate(zonesInput);
+
+  document.querySelectorAll('input[name="planner-pin-mode"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      void renderMapPins();
+    });
+  });
 
   void hydrateFromQuery();
 </script>
