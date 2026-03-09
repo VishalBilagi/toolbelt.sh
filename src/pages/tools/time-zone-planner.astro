@@ -20,12 +20,12 @@ import Input from '../../components/ui/Input.astro';
         <Field
           label="Base timezone"
           htmlFor="planner-base-timezone"
-          hint="Pick from the map or type an IANA zone like America/Los_Angeles."
+          hint="Pick from map markers or type an IANA zone like America/Los_Angeles."
         >
           <Input id="planner-base-timezone" autocomplete="off" />
         </Field>
 
-        <Field label="Date & time" htmlFor="planner-date-time" hint="This is interpreted in the selected base timezone.">
+        <Field label="Date & time" htmlFor="planner-date-time" hint="Interpreted in the selected base timezone.">
           <Input id="planner-date-time" type="datetime-local" />
         </Field>
       </div>
@@ -33,7 +33,7 @@ import Input from '../../components/ui/Input.astro';
       <section class="map-section" aria-labelledby="planner-map-title">
         <div class="map-heading">
           <h3 id="planner-map-title">Interactive timezone map</h3>
-          <p>Select mode, then click city markers on the map.</p>
+          <p>Powered by Leaflet. Choose a mode, then click city markers.</p>
         </div>
 
         <div class="map-mode-row" role="radiogroup" aria-label="Map click mode">
@@ -47,32 +47,7 @@ import Input from '../../components/ui/Input.astro';
           </label>
         </div>
 
-        <div class="world-map" id="planner-map" role="region" aria-label="World map with city markers">
-          <svg class="world-map__svg" viewBox="0 0 1000 480" aria-hidden="true" focusable="false">
-            <defs>
-              <linearGradient id="ocean-gradient" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0%" stop-color="color-mix(in srgb, var(--bg-surface) 96%, #0b1f42)" />
-                <stop offset="100%" stop-color="color-mix(in srgb, var(--bg-inset) 92%, #08152e)" />
-              </linearGradient>
-            </defs>
-            <rect x="0" y="0" width="1000" height="480" fill="url(#ocean-gradient)" />
-            <g opacity="0.2" stroke="var(--border-default)" stroke-width="1">
-              <path d="M0 80H1000" /><path d="M0 160H1000" /><path d="M0 240H1000" /><path d="M0 320H1000" /><path d="M0 400H1000" />
-              <path d="M100 0V480" /><path d="M200 0V480" /><path d="M300 0V480" /><path d="M400 0V480" />
-              <path d="M500 0V480" /><path d="M600 0V480" /><path d="M700 0V480" /><path d="M800 0V480" /><path d="M900 0V480" />
-            </g>
-            <g fill="color-mix(in srgb, var(--brand) 24%, #8db8d9)" stroke="color-mix(in srgb, var(--brand) 35%, transparent)" stroke-width="2">
-              <path d="M80 120 L175 95 L240 130 L225 185 L168 205 L120 185 L82 150 Z" />
-              <path d="M175 220 L240 210 L285 248 L260 320 L205 350 L165 302 Z" />
-              <path d="M425 88 L495 80 L542 104 L560 146 L518 186 L462 182 L425 145 Z" />
-              <path d="M468 198 L532 208 L575 268 L552 360 L505 396 L460 352 L444 280 Z" />
-              <path d="M574 122 L640 108 L700 138 L716 190 L668 220 L610 202 L572 160 Z" />
-              <path d="M706 228 L780 208 L842 248 L862 302 L834 350 L768 346 L724 302 Z" />
-              <path d="M790 352 L870 362 L910 410 L878 450 L810 442 L782 395 Z" />
-            </g>
-          </svg>
-          <div id="planner-map-markers" class="map-markers"></div>
-        </div>
+        <div id="planner-map" class="world-map" role="region" aria-label="World map with timezone markers"></div>
       </section>
 
       <div class="sliders-grid">
@@ -184,51 +159,26 @@ import Input from '../../components/ui/Input.astro';
   }
 
   .world-map {
-    position: relative;
+    min-height: 22rem;
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    background: color-mix(in srgb, var(--bg-inset) 85%, #0a1734);
   }
 
-  .world-map__svg {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .map-markers {
-    position: absolute;
-    inset: 0;
-  }
-
-  .map-pin {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    appearance: none;
-    border: 1px solid color-mix(in srgb, var(--border-default) 75%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg-surface) 85%, #0e1e3f);
+  :global(.planner-map-tooltip) {
+    background: color-mix(in srgb, var(--bg-surface) 88%, #08152e);
+    border: 1px solid color-mix(in srgb, var(--border-default) 70%, transparent);
     color: var(--text-primary);
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.22rem 0.42rem;
-    cursor: pointer;
-    transition: transform 140ms ease;
+    border-radius: 0.45rem;
+    box-shadow: none;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.15rem 0.35rem;
   }
 
-  .map-pin:hover {
-    transform: translate(-50%, -50%) scale(1.06);
-  }
-
-  .map-pin--base {
-    border-color: color-mix(in srgb, var(--brand) 70%, transparent);
-    background: color-mix(in srgb, var(--brand) 28%, var(--bg-surface));
-  }
-
-  .map-pin--selected {
-    border-color: color-mix(in srgb, var(--state-success) 70%, transparent);
-    background: color-mix(in srgb, var(--state-success) 22%, var(--bg-surface));
+  :global(.planner-map-tooltip::before) {
+    display: none;
   }
 
   .slider-line {
@@ -324,6 +274,10 @@ import Input from '../../components/ui/Input.astro';
     .sliders-grid {
       grid-template-columns: 1fr;
     }
+
+    .world-map {
+      min-height: 19rem;
+    }
   }
 </style>
 
@@ -345,27 +299,35 @@ import Input from '../../components/ui/Input.astro';
     workdayEndHour: number;
   }
 
-  interface MapPin {
+  interface MapPoint {
     label: string;
     timeZone: string;
-    left: number;
-    top: number;
+    lat: number;
+    lng: number;
   }
 
-  const MAP_PINS: MapPin[] = [
-    { label: 'LA', timeZone: 'America/Los_Angeles', left: 15, top: 42 },
-    { label: 'NYC', timeZone: 'America/New_York', left: 23, top: 35 },
-    { label: 'RIO', timeZone: 'America/Sao_Paulo', left: 29, top: 66 },
-    { label: 'LON', timeZone: 'Europe/London', left: 48, top: 31 },
-    { label: 'BER', timeZone: 'Europe/Berlin', left: 53, top: 32 },
-    { label: 'DXB', timeZone: 'Asia/Dubai', left: 61, top: 42 },
-    { label: 'DEL', timeZone: 'Asia/Kolkata', left: 66, top: 45 },
-    { label: 'BKK', timeZone: 'Asia/Bangkok', left: 71, top: 49 },
-    { label: 'TYO', timeZone: 'Asia/Tokyo', left: 82, top: 38 },
-    { label: 'SYD', timeZone: 'Australia/Sydney', left: 86, top: 73 }
+  type LeafletModule = typeof import('leaflet');
+  type LeafletMap = import('leaflet').Map;
+  type LeafletCircle = import('leaflet').CircleMarker;
+
+  const MAP_POINTS: MapPoint[] = [
+    { label: 'LA', timeZone: 'America/Los_Angeles', lat: 34.0522, lng: -118.2437 },
+    { label: 'NYC', timeZone: 'America/New_York', lat: 40.7128, lng: -74.006 },
+    { label: 'RIO', timeZone: 'America/Sao_Paulo', lat: -22.9068, lng: -43.1729 },
+    { label: 'LON', timeZone: 'Europe/London', lat: 51.5072, lng: -0.1276 },
+    { label: 'BER', timeZone: 'Europe/Berlin', lat: 52.52, lng: 13.405 },
+    { label: 'DXB', timeZone: 'Asia/Dubai', lat: 25.2048, lng: 55.2708 },
+    { label: 'DEL', timeZone: 'Asia/Kolkata', lat: 28.6139, lng: 77.209 },
+    { label: 'BKK', timeZone: 'Asia/Bangkok', lat: 13.7563, lng: 100.5018 },
+    { label: 'TYO', timeZone: 'Asia/Tokyo', lat: 35.6762, lng: 139.6503 },
+    { label: 'SYD', timeZone: 'Australia/Sydney', lat: -33.8688, lng: 151.2093 }
   ];
 
   let logic: typeof import('../../tools/time-zone-planner/logic') | null = null;
+  let leaflet: LeafletModule | null = null;
+  let map: LeafletMap | null = null;
+  let tileLayer: import('leaflet').TileLayer | null = null;
+  const markerByZone = new Map<string, LeafletCircle>();
 
   const getLogic = async () => {
     if (!logic) {
@@ -373,6 +335,15 @@ import Input from '../../components/ui/Input.astro';
     }
 
     return logic;
+  };
+
+  const getLeaflet = async (): Promise<LeafletModule> => {
+    if (!leaflet) {
+      await import('leaflet/dist/leaflet.css');
+      leaflet = await import('leaflet');
+    }
+
+    return leaflet;
   };
 
   const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
@@ -387,7 +358,7 @@ import Input from '../../components/ui/Input.astro';
   const workEndOutput = byId<HTMLOutputElement>('planner-work-end-output');
   const resultsNode = byId<HTMLElement>('planner-results');
   const statusNode = byId<HTMLElement>('planner-status');
-  const markerNode = byId<HTMLElement>('planner-map-markers');
+  const mapContainer = byId<HTMLElement>('planner-map');
 
   const getPinMode = (): 'base' | 'compare' => {
     const mode = (document.querySelector('input[name="planner-pin-mode"]:checked') as HTMLInputElement | null)?.value;
@@ -534,46 +505,98 @@ import Input from '../../components/ui/Input.astro';
     return `${window.location.origin}${window.location.pathname}${query}`;
   };
 
-  const renderMapPins = async (): Promise<void> => {
-    if (!markerNode) return;
+  const applyMarkerStyles = async (): Promise<void> => {
+    if (markerByZone.size === 0) return;
 
     const plannerLogic = await getLogic();
     const base = (baseTimeZoneInput?.value ?? '').trim();
     const selected = new Set(plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')));
 
-    markerNode.innerHTML = MAP_PINS.map((pin) => {
-      const classes = ['map-pin'];
-      if (pin.timeZone === base) {
-        classes.push('map-pin--base');
-      } else if (selected.has(pin.timeZone)) {
-        classes.push('map-pin--selected');
+    for (const [zone, marker] of markerByZone.entries()) {
+      if (zone === base) {
+        marker.setStyle({ color: '#3182f6', fillColor: '#3182f6', fillOpacity: 0.85, radius: 8 });
+      } else if (selected.has(zone)) {
+        marker.setStyle({ color: '#1dbf73', fillColor: '#1dbf73', fillOpacity: 0.8, radius: 7 });
+      } else {
+        marker.setStyle({ color: '#9ab4d5', fillColor: '#9ab4d5', fillOpacity: 0.65, radius: 6 });
+      }
+    }
+  };
+
+  const handleMapPointClick = async (zone: string): Promise<void> => {
+    if (getPinMode() === 'base') {
+      if (baseTimeZoneInput) {
+        baseTimeZoneInput.value = zone;
+      }
+    } else {
+      const current = parseZonesInput(zonesInput?.value ?? '');
+      const set = new Set(current.filter(Boolean));
+
+      if (set.has(zone)) {
+        set.delete(zone);
+      } else {
+        set.add(zone);
       }
 
-      return `<button type="button" class="${classes.join(' ')}" style="left:${pin.left}%;top:${pin.top}%" data-zone="${pin.timeZone}" title="${pin.timeZone}" aria-label="${pin.timeZone}">${pin.label}</button>`;
-    }).join('');
+      if (zonesInput) {
+        zonesInput.value = Array.from(set).join(', ');
+      }
+    }
 
-    markerNode.querySelectorAll('button[data-zone]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const zone = (button as HTMLButtonElement).dataset.zone ?? '';
-        if (!zone) return;
+    await updatePlanner();
+  };
 
-        if (getPinMode() === 'base') {
-          if (baseTimeZoneInput) baseTimeZoneInput.value = zone;
-        } else {
-          const current = parseZonesInput(zonesInput?.value ?? '');
-          const set = new Set(current);
-          if (set.has(zone)) {
-            set.delete(zone);
-          } else {
-            set.add(zone);
-          }
+  const ensureMap = async (): Promise<void> => {
+    if (!mapContainer) return;
 
-          if (zonesInput) zonesInput.value = Array.from(set).join(', ');
-        }
+    const L = await getLeaflet();
 
-        void updatePlanner();
+    if (!map) {
+      map = L.map(mapContainer, {
+        zoomControl: true,
+        attributionControl: false,
+        worldCopyJump: false,
+        minZoom: 2,
+        maxZoom: 6
+      }).setView([24, 15], 2);
+
+      tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        noWrap: true,
+        minZoom: 2,
+        maxZoom: 6
       });
-    });
+
+      tileLayer.addTo(map);
+
+      for (const point of MAP_POINTS) {
+        const marker = L.circleMarker([point.lat, point.lng], {
+          radius: 6,
+          color: '#9ab4d5',
+          fillColor: '#9ab4d5',
+          fillOpacity: 0.65,
+          weight: 1.5
+        });
+
+        marker.bindTooltip(point.label, {
+          permanent: true,
+          direction: 'top',
+          className: 'planner-map-tooltip',
+          offset: [0, -9],
+          opacity: 0.98
+        });
+
+        marker.on('click', () => {
+          void handleMapPointClick(point.timeZone);
+        });
+
+        marker.addTo(map);
+        markerByZone.set(point.timeZone, marker);
+      }
+    }
+
+    map.invalidateSize();
+    await applyMarkerStyles();
   };
 
   const updatePlanner = async (): Promise<void> => {
@@ -581,7 +604,7 @@ import Input from '../../components/ui/Input.astro';
     const state = await readState();
 
     if (!state) {
-      await renderMapPins();
+      await ensureMap();
       renderRows([], {
         baseTimeZone: 'UTC',
         dateTimeLocal: '',
@@ -600,11 +623,11 @@ import Input from '../../components/ui/Input.astro';
       const rows = finalZones.map((zone) => formatRow(shiftedInstant, zone));
 
       await buildShareUrl(state);
-      await renderMapPins();
+      await ensureMap();
       renderRows(rows, state);
       setStatus(`Showing ${rows.length} timezone${rows.length === 1 ? '' : 's'} at ${shiftedInstant.toISOString()}.`);
     } catch (error) {
-      await renderMapPins();
+      await ensureMap();
       renderRows([], state);
       setStatus(error instanceof Error ? error.message : 'Unable to convert time.');
     }
@@ -652,6 +675,7 @@ import Input from '../../components/ui/Input.astro';
     if (workEndInput) workEndInput.value = String(parsed.workdayEndHour);
 
     renderSliderLabels();
+    await ensureMap();
     await updatePlanner();
   };
 
@@ -673,7 +697,7 @@ import Input from '../../components/ui/Input.astro';
 
   document.querySelectorAll('input[name="planner-pin-mode"]').forEach((input) => {
     input.addEventListener('change', () => {
-      void renderMapPins();
+      void applyMarkerStyles();
     });
   });
 
