@@ -187,6 +187,7 @@ const TOOL_TEXT_KEYS_BY_HREF = {
   '/tools/epoch': { name: 'tools.epoch.name', description: 'tools.epoch.description' },
   '/tools/data-utils': { name: 'tools.data-utils.name', description: 'tools.data-utils.description' },
   '/tools/crypto': { name: 'tools.crypto.name', description: 'tools.crypto.description' },
+  '/tools/pdf-toolkit': { name: 'tools.pdf-toolkit.name', description: 'tools.pdf-toolkit.description' },
 } as const satisfies Record<string, { name: TranslationKey; description: TranslationKey }>;
 
 export const getLocalizedToolSectionTitle = (

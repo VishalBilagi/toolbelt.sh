@@ -53,6 +53,8 @@ const en = {
   'tools.data-utils.description': 'JSON format/validate/diff and CSV ↔ JSON conversion in one workspace.',
   'tools.crypto.name': 'Crypto Utilities',
   'tools.crypto.description': 'SHA/MD5 hashing, HMAC signing, and UUID generation.',
+  'tools.pdf-toolkit.name': 'PDF Toolkit',
+  'tools.pdf-toolkit.description': 'Merge PDFs, split files into pages, and extract selected page ranges locally.',
   'i18n.samples.redirectTo': 'Redirecting to {target}',
   'pages.toolsIndex.title': 'All Tools',
   'pages.crop.redirectTitle': 'Redirecting…',

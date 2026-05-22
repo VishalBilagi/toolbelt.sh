@@ -1,0 +1,729 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+---
+
+<ToolLayout title="PDF Toolkit">
+  <section class="pdf-shell">
+    <nav class="pdf-tabs" aria-label="PDF toolkit modes">
+      <button type="button" class="pdf-tab is-active" data-pdf-tab="merge" aria-controls="pdf-panel-merge" aria-selected="true">
+        Merge
+      </button>
+      <button type="button" class="pdf-tab" data-pdf-tab="split" aria-controls="pdf-panel-split" aria-selected="false">
+        Split
+      </button>
+      <button type="button" class="pdf-tab" data-pdf-tab="extract" aria-controls="pdf-panel-extract" aria-selected="false">
+        Extract Pages
+      </button>
+    </nav>
+
+    <section id="pdf-panel-merge" class="pdf-panel" data-pdf-panel="merge">
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Merge PDFs</h2>
+            <p class="ui-card__description">Combine multiple PDF files in order and export one merged document.</p>
+          </div>
+        </div>
+
+        <div class="workflow-stack">
+          <section class="panel-box control-surface">
+            <div class="control-grid merge-controls">
+              <Field label="PDF files" htmlFor="merge-files-input" class="control-field">
+                <Input id="merge-files-input" type="file" accept="application/pdf" multiple />
+              </Field>
+
+              <p id="merge-files-list" class="hint control-files">No files selected.</p>
+
+              <div class="actions control-actions">
+                <Button id="merge-run" variant="primary">Merge PDFs</Button>
+              </div>
+
+              <p id="merge-status" class="status control-status" aria-live="polite">Select at least two PDF files to merge.</p>
+            </div>
+          </section>
+
+          <section class="panel-box preview-box">
+            <div class="preview-head">
+              <h3>Preview</h3>
+              <span id="merge-preview-label" class="preview-label">No PDF selected</span>
+            </div>
+
+            <div id="merge-preview-top" class="preview-counter" hidden>
+              <span id="merge-page-center-top">Page 1</span>
+              <span id="merge-page-ratio-top">Page 1/1</span>
+            </div>
+
+            <iframe id="merge-preview-frame" class="pdf-preview" title="Merge PDF preview" hidden></iframe>
+            <p id="merge-preview-empty" class="hint">Select one or more PDFs to preview and merge.</p>
+
+            <div id="merge-preview-bottom" class="preview-footer" hidden>
+              <button id="merge-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="merge-page-center-bottom">Page 1</span>
+              <span id="merge-page-ratio-bottom">Page 1/1</span>
+              <button id="merge-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+
+    <section id="pdf-panel-split" class="pdf-panel" data-pdf-panel="split" hidden>
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Split PDF</h2>
+            <p class="ui-card__description">Split one PDF into one-file-per-page exports.</p>
+          </div>
+        </div>
+
+        <div class="workflow-stack">
+          <section class="panel-box control-surface">
+            <div class="control-grid split-controls">
+              <Field label="PDF file" htmlFor="split-file-input" class="control-field">
+                <Input id="split-file-input" type="file" accept="application/pdf" />
+              </Field>
+
+              <div class="actions control-actions">
+                <Button id="split-run" variant="primary">Split PDF</Button>
+              </div>
+
+              <p id="split-status" class="status control-status" aria-live="polite">Ready.</p>
+            </div>
+          </section>
+
+          <section class="panel-box preview-box">
+            <div class="preview-head">
+              <h3>Preview</h3>
+              <span id="split-preview-label" class="preview-label">No PDF selected</span>
+            </div>
+
+            <div id="split-preview-top" class="preview-counter" hidden>
+              <span id="split-page-center-top">Page 1</span>
+              <span id="split-page-ratio-top">Page 1/1</span>
+            </div>
+
+            <iframe id="split-preview-frame" class="pdf-preview" title="Split PDF preview" hidden></iframe>
+            <p id="split-preview-empty" class="hint">Choose a PDF to inspect before splitting.</p>
+
+            <div id="split-preview-bottom" class="preview-footer" hidden>
+              <button id="split-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="split-page-center-bottom">Page 1</span>
+              <span id="split-page-ratio-bottom">Page 1/1</span>
+              <button id="split-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+
+    <section id="pdf-panel-extract" class="pdf-panel" data-pdf-panel="extract" hidden>
+      <Card interactive={false}>
+        <div class="ui-card__header">
+          <div>
+            <h2 class="ui-card__title">Extract Pages</h2>
+            <p class="ui-card__description">Pick a page list like <code>1,3-5</code> and export only those pages.</p>
+          </div>
+        </div>
+
+        <div class="workflow-stack">
+          <section class="panel-box control-surface">
+            <div class="control-grid extract-controls">
+              <Field label="PDF file" htmlFor="extract-file-input" class="control-field">
+                <Input id="extract-file-input" type="file" accept="application/pdf" />
+              </Field>
+
+              <Field label="Pages to extract" htmlFor="extract-pages-input" class="control-field">
+                <Input id="extract-pages-input" type="text" placeholder="1,3-5" />
+              </Field>
+
+              <div class="actions control-actions">
+                <Button id="extract-run" variant="primary">Extract pages</Button>
+              </div>
+
+              <p id="extract-status" class="status control-status" aria-live="polite">Ready.</p>
+            </div>
+          </section>
+
+          <section class="panel-box preview-box">
+            <div class="preview-head">
+              <h3>Preview</h3>
+              <span id="extract-preview-label" class="preview-label">No PDF selected</span>
+            </div>
+
+            <div id="extract-preview-top" class="preview-counter" hidden>
+              <span id="extract-page-center-top">Page 1</span>
+              <span id="extract-page-ratio-top">Page 1/1</span>
+            </div>
+
+            <iframe id="extract-preview-frame" class="pdf-preview" title="Extract PDF preview" hidden></iframe>
+            <p id="extract-preview-empty" class="hint">Choose a PDF and page range, then export a new file.</p>
+
+            <div id="extract-preview-bottom" class="preview-footer" hidden>
+              <button id="extract-page-prev" type="button" class="page-button" aria-label="Previous page">Previous</button>
+              <span id="extract-page-center-bottom">Page 1</span>
+              <span id="extract-page-ratio-bottom">Page 1/1</span>
+              <button id="extract-page-next" type="button" class="page-button" aria-label="Next page">Next</button>
+            </div>
+          </section>
+        </div>
+      </Card>
+    </section>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 106rem) !important;
+    max-width: min(100%, 106rem) !important;
+  }
+
+  .pdf-shell {
+    display: grid;
+    gap: var(--space-lg);
+    padding-inline: clamp(0.75rem, 1.8vw, 1.8rem);
+  }
+
+  .pdf-tabs {
+    display: flex;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding: 0.45rem;
+    border-radius: calc(var(--radius-lg) + 0.2rem);
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    position: sticky;
+    top: 5.2rem;
+    z-index: 4;
+    backdrop-filter: blur(8px);
+  }
+
+  .pdf-tab {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    min-height: 2.55rem;
+    padding: 0.55rem 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .pdf-tab:hover,
+  .pdf-tab:focus-visible {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border-default));
+    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
+  }
+
+  .pdf-tab.is-active {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-default));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      color-mix(in srgb, var(--bg-inset) 82%, transparent)
+    );
+  }
+
+  .pdf-panel[hidden] {
+    display: none;
+  }
+
+  .workflow-stack {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .panel-box {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 86%, transparent));
+    padding: var(--space-md);
+    min-width: 0;
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .status {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+  }
+
+  .hint {
+    margin-top: var(--space-sm);
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+  }
+
+  .preview-box {
+    display: grid;
+    gap: var(--space-sm);
+    align-content: start;
+  }
+
+  .control-surface {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .control-grid {
+    display: grid;
+    gap: var(--space-sm) var(--space-md);
+    align-items: center;
+  }
+
+  .merge-controls {
+    grid-template-columns: minmax(24rem, 2.8fr) minmax(16rem, 1.2fr) auto minmax(18rem, 1.2fr);
+    grid-template-areas:
+      'file names action status';
+  }
+
+  .split-controls {
+    grid-template-columns: minmax(24rem, 3fr) auto minmax(18rem, 1.2fr);
+    grid-template-areas:
+      'file action status';
+  }
+
+  .extract-controls {
+    grid-template-columns: minmax(20rem, 2.4fr) minmax(14rem, 1.2fr) auto minmax(18rem, 1.2fr);
+    grid-template-areas:
+      'file pages action status';
+  }
+
+  .control-field {
+    margin: 0;
+  }
+
+  .merge-controls .control-field:first-child,
+  .split-controls .control-field:first-child,
+  .extract-controls .control-field:first-child {
+    grid-area: file;
+  }
+
+  .extract-controls .control-field:nth-child(2) {
+    grid-area: pages;
+  }
+
+  .control-files {
+    grid-area: names;
+    margin: 0;
+    align-self: center;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  .control-actions {
+    grid-area: action;
+    margin: 0;
+    align-self: center;
+    justify-self: center;
+  }
+
+  .control-status {
+    grid-area: status;
+    margin: 0;
+    align-self: center;
+    min-width: 0;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+
+  .preview-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .preview-head h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .preview-label {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+  }
+
+  .preview-counter,
+  .preview-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0.55rem 0.2rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .preview-footer {
+    grid-template-columns: auto 1fr 1fr auto;
+    gap: var(--space-sm);
+  }
+
+  .preview-counter span:first-child,
+  .preview-footer span:nth-child(2) {
+    justify-self: center;
+  }
+
+  .preview-counter span:last-child,
+  .preview-footer span:nth-child(3) {
+    justify-self: end;
+  }
+
+  .preview-counter span:first-child {
+    grid-column: 2;
+  }
+
+  .preview-counter span:last-child {
+    grid-column: 3;
+  }
+
+  .page-button {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    color: var(--text-primary);
+    min-height: 2rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .page-button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+
+  .pdf-preview {
+    width: 100%;
+    min-height: clamp(48rem, 84vh, 90rem);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-inset) 90%, transparent);
+  }
+
+  @media (max-width: 1180px) {
+    .merge-controls,
+    .split-controls,
+    .extract-controls {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'file'
+        'pages'
+        'names'
+        'action'
+        'status';
+    }
+
+    .control-surface {
+      padding: var(--space-md);
+    }
+
+    .control-actions {
+      justify-self: center;
+    }
+
+    .pdf-preview {
+      min-height: 34rem;
+    }
+  }
+</style>
+
+<script>
+  type PreviewMode = 'merge' | 'split' | 'extract';
+
+  interface PreviewState {
+    fileUrl: string | null;
+    page: number;
+    totalPages: number;
+  }
+
+  let logic: typeof import('../../tools/pdf-toolkit/logic') | null = null;
+  let pdfLib: typeof import('pdf-lib') | null = null;
+
+  const getLogic = async () => {
+    if (!logic) {
+      logic = await import('../../tools/pdf-toolkit/logic');
+    }
+
+    return logic;
+  };
+
+  const getPdfLib = async () => {
+    if (!pdfLib) {
+      pdfLib = await import('pdf-lib');
+    }
+
+    return pdfLib;
+  };
+
+  const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
+
+  const readFileBytes = async (file: File): Promise<Uint8Array> => {
+    const buffer = await file.arrayBuffer();
+    return new Uint8Array(buffer);
+  };
+
+  const downloadBytes = (filename: string, bytes: Uint8Array) => {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(href);
+  };
+
+  const makePreviewSrc = (fileUrl: string, page: number, stamp = 0) => `${fileUrl}?v=${stamp}#toolbar=0&navpanes=0&scrollbar=0&page=${page}&view=FitH`;
+
+  const previewStateByMode: Record<PreviewMode, PreviewState> = {
+    merge: { fileUrl: null, page: 1, totalPages: 1 },
+    split: { fileUrl: null, page: 1, totalPages: 1 },
+    extract: { fileUrl: null, page: 1, totalPages: 1 },
+  };
+
+  const setTab = (mode: string) => {
+    document.querySelectorAll<HTMLButtonElement>('[data-pdf-tab]').forEach((button) => {
+      const active = button.dataset.pdfTab === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-pdf-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.pdfPanel !== mode;
+    });
+  };
+
+  const renderPreview = (mode: PreviewMode) => {
+    const state = previewStateByMode[mode];
+    const frame = byId<HTMLIFrameElement>(`${mode}-preview-frame`);
+    const empty = byId<HTMLElement>(`${mode}-preview-empty`);
+    const top = byId<HTMLElement>(`${mode}-preview-top`);
+    const bottom = byId<HTMLElement>(`${mode}-preview-bottom`);
+
+    const centerTop = byId<HTMLElement>(`${mode}-page-center-top`);
+    const ratioTop = byId<HTMLElement>(`${mode}-page-ratio-top`);
+    const centerBottom = byId<HTMLElement>(`${mode}-page-center-bottom`);
+    const ratioBottom = byId<HTMLElement>(`${mode}-page-ratio-bottom`);
+
+    const prev = byId<HTMLButtonElement>(`${mode}-page-prev`);
+    const next = byId<HTMLButtonElement>(`${mode}-page-next`);
+
+    if (!frame || !empty || !top || !bottom || !centerTop || !ratioTop || !centerBottom || !ratioBottom || !prev || !next) {
+      return;
+    }
+
+    if (!state.fileUrl) {
+      frame.hidden = true;
+      frame.removeAttribute('src');
+      empty.hidden = false;
+      top.hidden = true;
+      bottom.hidden = true;
+      return;
+    }
+
+    const pageLabel = `Page ${state.page}`;
+    const ratioLabel = `Page ${state.page}/${state.totalPages}`;
+
+    frame.src = makePreviewSrc(state.fileUrl ?? '', state.page, Date.now());
+    frame.hidden = false;
+    empty.hidden = true;
+    top.hidden = false;
+    bottom.hidden = false;
+
+    centerTop.textContent = pageLabel;
+    centerBottom.textContent = pageLabel;
+    ratioTop.textContent = ratioLabel;
+    ratioBottom.textContent = ratioLabel;
+
+    prev.disabled = state.page <= 1;
+    next.disabled = state.page >= state.totalPages;
+  };
+
+  const resetPreview = (mode: PreviewMode) => {
+    const current = previewStateByMode[mode];
+    if (current.fileUrl) {
+      URL.revokeObjectURL(current.fileUrl);
+    }
+
+    previewStateByMode[mode] = { fileUrl: null, page: 1, totalPages: 1 };
+    renderPreview(mode);
+
+    const label = byId<HTMLElement>(`${mode}-preview-label`);
+    if (label) {
+      label.textContent = 'No PDF selected';
+    }
+  };
+
+  const setPreview = async (mode: PreviewMode, file: File | null) => {
+    if (!file) {
+      resetPreview(mode);
+      return;
+    }
+
+    const bytes = await readFileBytes(file);
+    const { PDFDocument } = await getPdfLib();
+    const pdf = await PDFDocument.load(bytes);
+
+    const current = previewStateByMode[mode];
+    if (current.fileUrl) {
+      URL.revokeObjectURL(current.fileUrl);
+    }
+
+    previewStateByMode[mode] = {
+      fileUrl: URL.createObjectURL(file),
+      page: 1,
+      totalPages: Math.max(1, pdf.getPageCount()),
+    };
+
+    const label = byId<HTMLElement>(`${mode}-preview-label`);
+    if (label) {
+      label.textContent = file.name;
+    }
+
+    renderPreview(mode);
+  };
+
+  const stepPreviewPage = (mode: PreviewMode, delta: number) => {
+    const state = previewStateByMode[mode];
+    if (!state.fileUrl) return;
+
+    const nextPage = Math.max(1, Math.min(state.page + delta, state.totalPages));
+    if (nextPage === state.page) return;
+
+    state.page = nextPage;
+    renderPreview(mode);
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-pdf-tab]').forEach((button) => {
+    button.addEventListener('click', () => setTab(button.dataset.pdfTab ?? 'merge'));
+  });
+
+  (['merge', 'split', 'extract'] as const).forEach((mode) => {
+    byId<HTMLButtonElement>(`${mode}-page-prev`)?.addEventListener('click', () => stepPreviewPage(mode, -1));
+    byId<HTMLButtonElement>(`${mode}-page-next`)?.addEventListener('click', () => stepPreviewPage(mode, 1));
+  });
+
+  const mergeFilesInput = byId<HTMLInputElement>('merge-files-input');
+  const mergeFilesList = byId<HTMLElement>('merge-files-list');
+  const mergeStatus = byId<HTMLElement>('merge-status');
+
+  mergeFilesInput?.addEventListener('change', async () => {
+    const files = [...(mergeFilesInput.files ?? [])];
+    if (mergeFilesList) {
+      mergeFilesList.textContent = files.length > 0 ? files.map((file) => file.name).join(' • ') : 'No files selected.';
+    }
+
+    try {
+      await setPreview('merge', files[0] ?? null);
+    } catch {
+      resetPreview('merge');
+    }
+  });
+
+  document.getElementById('merge-run')?.addEventListener('click', async () => {
+    try {
+      const files = [...(mergeFilesInput?.files ?? [])];
+      const bytes = await Promise.all(files.map((file) => readFileBytes(file)));
+      const { mergePdfFiles } = await getLogic();
+      const result = await mergePdfFiles(bytes);
+      downloadBytes('merged.pdf', result.bytes);
+
+      if (mergeStatus) {
+        mergeStatus.textContent = `Merged ${files.length} files (${result.pageCount} total pages).`;
+      }
+    } catch (error) {
+      if (mergeStatus) {
+        mergeStatus.textContent = error instanceof Error ? error.message : 'Unable to merge PDFs.';
+      }
+    }
+  });
+
+  const splitFileInput = byId<HTMLInputElement>('split-file-input');
+  const splitStatus = byId<HTMLElement>('split-status');
+
+  splitFileInput?.addEventListener('change', async () => {
+    try {
+      await setPreview('split', splitFileInput.files?.[0] ?? null);
+    } catch {
+      resetPreview('split');
+    }
+  });
+
+  document.getElementById('split-run')?.addEventListener('click', async () => {
+    try {
+      const file = splitFileInput?.files?.[0];
+      if (!file) {
+        throw new Error('Choose a PDF file to split.');
+      }
+
+      const { splitPdfIntoSinglePages } = await getLogic();
+      const pages = await splitPdfIntoSinglePages(await readFileBytes(file));
+      const baseName = file.name.replace(/\.pdf$/i, '') || 'split';
+
+      pages.forEach((pageBytes, index) => {
+        downloadBytes(`${baseName}-page-${index + 1}.pdf`, pageBytes);
+      });
+
+      if (splitStatus) {
+        splitStatus.textContent = `Created ${pages.length} single-page PDFs.`;
+      }
+    } catch (error) {
+      if (splitStatus) {
+        splitStatus.textContent = error instanceof Error ? error.message : 'Unable to split PDF.';
+      }
+    }
+  });
+
+  const extractFileInput = byId<HTMLInputElement>('extract-file-input');
+  const extractPagesInput = byId<HTMLInputElement>('extract-pages-input');
+  const extractStatus = byId<HTMLElement>('extract-status');
+
+  extractFileInput?.addEventListener('change', async () => {
+    try {
+      await setPreview('extract', extractFileInput.files?.[0] ?? null);
+    } catch {
+      resetPreview('extract');
+    }
+  });
+
+  document.getElementById('extract-run')?.addEventListener('click', async () => {
+    try {
+      const file = extractFileInput?.files?.[0];
+      if (!file) {
+        throw new Error('Choose a PDF file to extract pages from.');
+      }
+
+      const { extractPdfPages, parsePageSelection } = await getLogic();
+      const parsedPages = parsePageSelection(extractPagesInput?.value ?? '');
+      const result = await extractPdfPages(await readFileBytes(file), parsedPages);
+
+      const baseName = file.name.replace(/\.pdf$/i, '') || 'extracted';
+      downloadBytes(`${baseName}-extracted.pdf`, result.bytes);
+
+      if (extractStatus) {
+        extractStatus.textContent = `Extracted ${result.pageCount} page(s).`;
+      }
+    } catch (error) {
+      if (extractStatus) {
+        extractStatus.textContent = error instanceof Error ? error.message : 'Unable to extract pages.';
+      }
+    }
+  });
+</script>

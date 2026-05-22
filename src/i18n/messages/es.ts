@@ -55,6 +55,8 @@ const es: Partial<Record<TranslationKey, string>> = {
   'tools.data-utils.description': 'Formato/validación/diff JSON y conversión CSV ↔ JSON en un solo espacio.',
   'tools.crypto.name': 'Utilidades criptográficas',
   'tools.crypto.description': 'Hashing SHA/MD5, firma HMAC y generación de UUID.',
+  'tools.pdf-toolkit.name': 'Toolkit PDF',
+  'tools.pdf-toolkit.description': 'Combina PDFs, divide archivos en páginas y extrae rangos de páginas localmente.',
   'i18n.samples.redirectTo': 'Redirigiendo a {target}',
   'pages.toolsIndex.title': 'Todas las herramientas',
   'pages.crop.redirectTitle': 'Redirigiendo…',
