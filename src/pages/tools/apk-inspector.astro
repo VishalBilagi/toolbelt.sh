@@ -1,0 +1,614 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+---
+
+<ToolLayout title="APK Inspector">
+  <section class="apk-shell">
+    <Card interactive={false} class="apk-drop-card ui-card--lg">
+      <h2 class="ui-card__title">Drop an APK to inspect</h2>
+      <p class="ui-card__description">Parse package metadata, permissions, manifest summary, signing artifacts, and file size breakdown entirely in your browser.</p>
+      <label id="apk-drop-zone" class="apk-drop-zone" for="apk-input">
+        <input id="apk-input" type="file" accept=".apk,application/vnd.android.package-archive" hidden />
+        <strong>Drag & drop .apk here</strong>
+        <span>or click to pick a file</span>
+      </label>
+      <div class="apk-top-actions">
+        <Button id="apk-reset" variant="ghost">Reset / Inspect another APK</Button>
+      </div>
+      <p id="apk-status" class="apk-status" aria-live="polite">Awaiting APK file.</p>
+    </Card>
+
+    <div class="apk-results" hidden id="apk-results">
+      <aside class="apk-sidebar">
+        <Card interactive={false} class="sidebar-card">
+          <h3 class="ui-card__title">Identity</h3>
+          <dl class="identity-list" id="identity-list"></dl>
+        </Card>
+
+        <Card interactive={false} class="sidebar-card">
+          <h3 class="ui-card__title">Sections</h3>
+          <nav class="side-nav" aria-label="APK sections" data-section-nav>
+            <a href="#overview">Overview</a>
+            <a href="#permissions">Permissions</a>
+            <a href="#manifest">Manifest</a>
+            <a href="#signing">Signing</a>
+            <a href="#files">Files</a>
+            <a href="#size">Size</a>
+          </nav>
+        </Card>
+      </aside>
+
+      <div class="apk-main">
+        <Card id="overview" interactive={false} class="section-card">
+          <h3 class="ui-card__title">Overview</h3>
+          <div class="details-grid" id="overview-grid"></div>
+        </Card>
+
+        <Card id="permissions" interactive={false} class="section-card">
+          <div class="section-head">
+            <h3 class="ui-card__title">Permissions</h3>
+            <div class="perm-controls">
+              <span class="perm-label">Filter</span>
+              <Input id="perm-search" type="search" placeholder="Search permissions" />
+              <label><input id="perm-dangerous" type="checkbox" /> Dangerous only</label>
+            </div>
+          </div>
+          <ul id="permissions-list" class="simple-list"></ul>
+        </Card>
+
+        <Card id="manifest" interactive={false} class="section-card">
+          <h3 class="ui-card__title">Manifest</h3>
+          <div id="manifest-summary" class="details-grid"></div>
+          <Textarea id="manifest-raw" rows="12" readonly />
+        </Card>
+
+        <Card id="signing" interactive={false} class="section-card">
+          <h3 class="ui-card__title">Signing</h3>
+          <div id="signing-schemes" class="pill-list"></div>
+          <ul id="fingerprints-list" class="simple-list"></ul>
+        </Card>
+
+        <Card id="files" interactive={false} class="section-card">
+          <div class="section-head">
+            <h3 class="ui-card__title">Files</h3>
+            <Input id="files-filter" type="search" placeholder="Filter path contains…" />
+          </div>
+          <ul id="files-list" class="simple-list"></ul>
+        </Card>
+
+        <Card id="size" interactive={false} class="section-card">
+          <h3 class="ui-card__title">Size breakdown</h3>
+          <div id="size-breakdown" class="details-grid"></div>
+          <h4>Largest entries</h4>
+          <ul id="largest-list" class="simple-list"></ul>
+        </Card>
+      </div>
+    </div>
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 100rem) !important;
+    max-width: min(100%, 100rem) !important;
+    padding-inline: clamp(var(--space-md), 3vw, var(--space-2xl));
+  }
+
+  .apk-shell {
+    width: 100%;
+    margin-inline: auto;
+    display: grid;
+    gap: var(--space-2xl);
+    padding-bottom: var(--space-2xl);
+  }
+
+  .apk-drop-zone {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: clamp(var(--space-xl), 3vw, var(--space-3xl));
+    display: grid;
+    gap: var(--space-sm);
+    text-align: center;
+    cursor: pointer;
+    margin-top: var(--space-lg);
+    background: color-mix(in srgb, var(--bg-elevated) 72%, transparent);
+  }
+
+  .apk-drop-zone strong {
+    font-size: 1.15rem;
+  }
+
+  .apk-drop-zone.is-over {
+    border-color: var(--interactive-primary);
+    background: color-mix(in srgb, var(--interactive-primary) 13%, transparent);
+  }
+
+  .apk-top-actions {
+    margin-top: var(--space-lg);
+  }
+
+  .apk-status {
+    margin-top: var(--space-md);
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+  }
+
+  .apk-results {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(17rem, 19rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .apk-sidebar {
+    position: sticky;
+    top: calc(var(--space-xl) + 3.5rem);
+    display: grid;
+    gap: var(--space-lg);
+    max-height: calc(100vh - 7rem);
+    overflow: auto;
+    padding-right: var(--space-xs);
+  }
+
+  .apk-main {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .sidebar-card,
+  .section-card {
+    --card-padding: clamp(var(--space-xl), 2.4vw, var(--space-2xl));
+  }
+
+  .identity-list {
+    display: grid;
+    grid-template-columns: minmax(5.4rem, auto) minmax(0, 1fr);
+    row-gap: var(--space-md);
+    column-gap: var(--space-md);
+    margin: 0;
+  }
+
+  .identity-list dt {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .identity-list dd {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .side-nav {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+  }
+
+  .side-nav a {
+    display: block;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    color: var(--text-secondary);
+    transition: border-color var(--transition-base), background var(--transition-base), color var(--transition-base);
+  }
+
+  .side-nav a:hover {
+    border-color: var(--border-default);
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  }
+
+
+  .side-nav a[aria-current="true"] {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border-default));
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--text-primary);
+  }
+
+  .sidebar-card:last-child {
+    backdrop-filter: blur(6px);
+  }
+  .details-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    margin-top: var(--space-sm);
+  }
+
+  .detail-item {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+  }
+
+  .detail-item strong {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-size: 0.95rem;
+  }
+
+  .detail-item p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .perm-controls {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .perm-label {
+    color: var(--text-tertiary);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .perm-controls :global(.ui-input),
+  .section-head :global(.ui-input) {
+    min-width: 17rem;
+  }
+
+  .simple-list {
+    list-style: none;
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    max-height: 26rem;
+    overflow: auto;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .simple-list li {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.62rem 0.75rem;
+    line-height: 1.45;
+    background: color-mix(in srgb, var(--bg-elevated) 74%, transparent);
+  }
+
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+  }
+
+  .pill {
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.9rem;
+    background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  }
+
+  .copy-btn {
+    margin-left: var(--space-sm);
+    font-size: 0.74rem;
+    line-height: 1;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.48rem;
+    background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
+    color: var(--text-secondary);
+  }
+
+  .copy-btn:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-default));
+  }
+
+  #manifest-raw {
+    margin-top: var(--space-lg);
+    min-height: 24rem;
+  }
+
+  @media (max-width: 1200px) {
+    .apk-sidebar {
+      top: var(--space-xl);
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .apk-results {
+      grid-template-columns: 1fr;
+    }
+
+    .apk-sidebar {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+  }
+
+  @media (max-width: 700px) {
+    .perm-controls :global(.ui-input),
+    .section-head :global(.ui-input) {
+      min-width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import { FOLDER_FILTERS, filterPermissions, formatBytes } from '../../tools/apk-inspector/logic';
+
+  type Result = Awaited<ReturnType<typeof parseApk>>;
+  interface WorkerSuccessPayload {
+    fileName: string;
+    totalSize: number;
+    overview: {
+      appLabel: string;
+      packageName: string;
+      versionName: string;
+      versionCode: string;
+      minSdk: string;
+      targetSdk: string;
+      abis: string[];
+      permissions: string[];
+      rawManifest: string;
+      components: { activities: number; services: number; receivers: number; providers: number };
+    };
+    signing: { schemes: string[]; fingerprints: string[] };
+    files: {
+      entries: { path: string; size: number }[];
+      folderSummary: { key: string; bytes: number; fileCount: number }[];
+      largest: { path: string; size: number }[];
+    };
+  }
+
+  const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+  const statusEl = byId<HTMLElement>('apk-status');
+  const dropZone = byId<HTMLElement>('apk-drop-zone');
+  const input = byId<HTMLInputElement>('apk-input');
+  const resultsEl = byId<HTMLElement>('apk-results');
+  const sectionNavLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-section-nav] a[href^="#"]'));
+
+  const activateSectionNav = (): void => {
+    if (!sectionNavLinks.length || !('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+      if (!visible?.target.id) return;
+      const targetHash = `#${visible.target.id}`;
+
+      sectionNavLinks.forEach((link) => {
+        if (link.getAttribute('href') === targetHash) {
+          link.setAttribute('aria-current', 'true');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    }, { rootMargin: '-18% 0px -65% 0px', threshold: [0.2, 0.5, 0.8] });
+
+    sectionNavLinks.forEach((link) => {
+      const targetId = link.getAttribute('href')?.slice(1);
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      if (target) observer.observe(target);
+    });
+  };
+
+  activateSectionNav();
+
+  let parsed: WorkerSuccessPayload | null = null;
+
+  const copyButton = (value: string) => `<button type="button" class="copy-btn" data-copy="${encodeURIComponent(value)}">Copy</button>`;
+
+  const setStatus = (message: string) => {
+    if (statusEl) statusEl.textContent = message;
+  };
+
+  const parseApk = async (file: File): Promise<WorkerSuccessPayload> => {
+    const worker = new Worker(new URL('../../tools/apk-inspector/worker.ts', import.meta.url), { type: 'module' });
+
+    return new Promise((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<{ type: 'done'; payload: WorkerSuccessPayload } | { type: 'error'; message: string }>) => {
+        if (event.data.type === 'done') {
+          resolve(event.data.payload);
+        } else {
+          reject(new Error(event.data.message));
+        }
+        worker.terminate();
+      };
+
+      worker.onerror = (error) => {
+        reject(error instanceof ErrorEvent ? error.error ?? new Error(error.message) : new Error('Worker failed.'));
+        worker.terminate();
+      };
+
+      file.arrayBuffer().then((arrayBuffer) => {
+        worker.postMessage({ type: 'parse', fileName: file.name, arrayBuffer }, [arrayBuffer]);
+      });
+    });
+  };
+
+  const renderOverview = (payload: WorkerSuccessPayload) => {
+    const identity = byId<HTMLElement>('identity-list');
+    const overview = byId<HTMLElement>('overview-grid');
+    if (identity) {
+      identity.innerHTML = `
+        <dt>File</dt><dd>${payload.fileName}</dd>
+        <dt>Package</dt><dd>${payload.overview.packageName} ${copyButton(payload.overview.packageName)}</dd>
+        <dt>Version</dt><dd>${payload.overview.versionName} (${payload.overview.versionCode})</dd>
+        <dt>Total size</dt><dd>${formatBytes(payload.totalSize)}</dd>
+      `;
+    }
+
+    if (overview) {
+      const items = [
+        ['App label', payload.overview.appLabel],
+        ['Package', payload.overview.packageName],
+        ['versionName', payload.overview.versionName],
+        ['versionCode', payload.overview.versionCode],
+        ['minSdk', payload.overview.minSdk],
+        ['targetSdk', payload.overview.targetSdk],
+        ['ABIs', payload.overview.abis.join(', ') || 'Not found']
+      ];
+      overview.innerHTML = items.map(([label, value]) => `<div class="detail-item"><strong>${label}</strong><p>${value}</p></div>`).join('');
+    }
+  };
+
+  const renderPermissions = (payload: WorkerSuccessPayload) => {
+    const list = byId<HTMLElement>('permissions-list');
+    const search = byId<HTMLInputElement>('perm-search');
+    const dangerous = byId<HTMLInputElement>('perm-dangerous');
+    if (!list) return;
+
+    const draw = () => {
+      const items = filterPermissions(payload.overview.permissions, search?.value ?? '', dangerous?.checked ?? false);
+      list.innerHTML = items.length
+        ? items.map((permission) => `<li>${permission} ${copyButton(permission)}</li>`).join('')
+        : '<li>No matching permissions found.</li>';
+    };
+
+    search?.addEventListener('input', draw);
+    dangerous?.addEventListener('change', draw);
+    draw();
+  };
+
+  const renderManifest = (payload: WorkerSuccessPayload) => {
+    const summary = byId<HTMLElement>('manifest-summary');
+    const raw = byId<HTMLTextAreaElement>('manifest-raw');
+    if (summary) {
+      const entries: [string, string | number][] = [
+        ['Activities', payload.overview.components.activities],
+        ['Services', payload.overview.components.services],
+        ['Receivers', payload.overview.components.receivers],
+        ['Providers', payload.overview.components.providers]
+      ];
+      summary.innerHTML = entries.map(([label, value]) => `<div class="detail-item"><strong>${label}</strong><p>${value}</p></div>`).join('');
+    }
+    if (raw) raw.value = payload.overview.rawManifest;
+  };
+
+  const renderSigning = (payload: WorkerSuccessPayload) => {
+    const schemes = byId<HTMLElement>('signing-schemes');
+    const fingerprints = byId<HTMLElement>('fingerprints-list');
+    if (schemes) {
+      schemes.innerHTML = (payload.signing.schemes.length ? payload.signing.schemes : ['No scheme hints detected']).map((item) => `<span class="pill">${item}</span>`).join('');
+    }
+    if (fingerprints) {
+      fingerprints.innerHTML = payload.signing.fingerprints.length
+        ? payload.signing.fingerprints.map((entry) => `<li><code>${entry}</code> ${copyButton(entry)}</li>`).join('')
+        : '<li>No META-INF signing artifacts found.</li>';
+    }
+  };
+
+  const renderFiles = (payload: WorkerSuccessPayload) => {
+    const filesFilter = byId<HTMLInputElement>('files-filter');
+    const filesList = byId<HTMLElement>('files-list');
+    const sizeBreakdown = byId<HTMLElement>('size-breakdown');
+    const largest = byId<HTMLElement>('largest-list');
+    if (!filesList || !sizeBreakdown || !largest) return;
+
+    const drawFiles = () => {
+      const query = filesFilter?.value?.toLowerCase() ?? '';
+      const subset = payload.files.entries.filter((entry) => {
+        if (query && !entry.path.toLowerCase().includes(query)) return false;
+        return !FOLDER_FILTERS.some((folder) => query === folder.replace('/', '') && !entry.path.startsWith(folder));
+      });
+
+      filesList.innerHTML = subset.slice(0, 300).map((entry) => `<li><code>${entry.path}</code> — ${formatBytes(entry.size)}</li>`).join('');
+      if (!subset.length) filesList.innerHTML = '<li>No files match the filter.</li>';
+    };
+
+    filesFilter?.addEventListener('input', drawFiles);
+    drawFiles();
+
+    sizeBreakdown.innerHTML = payload.files.folderSummary
+      .slice(0, 16)
+      .map((bucket) => `<div class="detail-item"><strong>${bucket.key}</strong><p>${formatBytes(bucket.bytes)} · ${bucket.fileCount} files</p></div>`)
+      .join('');
+
+    largest.innerHTML = payload.files.largest
+      .slice(0, 25)
+      .map((entry) => `<li><code>${entry.path}</code> — ${formatBytes(entry.size)}</li>`)
+      .join('');
+  };
+
+  const renderAll = (payload: WorkerSuccessPayload) => {
+    renderOverview(payload);
+    renderPermissions(payload);
+    renderManifest(payload);
+    renderSigning(payload);
+    renderFiles(payload);
+    if (resultsEl) resultsEl.hidden = false;
+
+    document.querySelectorAll<HTMLElement>('[data-copy]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const raw = button.dataset.copy;
+        if (!raw) return;
+        const value = decodeURIComponent(raw);
+        await navigator.clipboard.writeText(value);
+        setStatus('Copied to clipboard.');
+      });
+    });
+  };
+
+  const handleFile = async (file: File | null) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.apk')) {
+      setStatus('Please provide a valid .apk file and try again.');
+      return;
+    }
+
+    setStatus('Parsing APK in worker…');
+
+    try {
+      parsed = await parseApk(file);
+      renderAll(parsed);
+      setStatus(`Parsed ${file.name} successfully.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? `Parsing failed: ${error.message}` : 'Parsing failed.');
+    }
+  };
+
+  input?.addEventListener('change', () => handleFile(input.files?.[0] ?? null));
+
+  dropZone?.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('is-over');
+  });
+
+  dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('is-over'));
+
+  dropZone?.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('is-over');
+    handleFile(event.dataTransfer?.files?.[0] ?? null);
+  });
+
+  document.getElementById('apk-reset')?.addEventListener('click', () => {
+    parsed = null;
+    if (resultsEl) resultsEl.hidden = true;
+    if (input) input.value = '';
+    setStatus('Awaiting APK file.');
+  });
+</script>

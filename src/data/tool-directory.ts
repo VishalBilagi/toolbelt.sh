@@ -83,6 +83,13 @@ export const toolSections: ToolSection[] = [
         description: 'Data URL conversion, MIME inspection, and page asset breakdown utilities.',
         tags: ['data-url', 'mime', 'magic-bytes', 'page-assets', 'devtools'],
         icon: 'table-layout'
+      },
+      {
+        name: 'APK Inspector',
+        href: '/tools/apk-inspector',
+        description: 'Inspect Android APK package metadata, permissions, signatures, and file size anatomy.',
+        tags: ['apk', 'android', 'manifest', 'permissions', 'signature', 'reverse'],
+        icon: 'table-layout'
       }
     ]
   },
