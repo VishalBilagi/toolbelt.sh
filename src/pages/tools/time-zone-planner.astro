@@ -1,0 +1,705 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import 'leaflet/dist/leaflet.css';
+---
+
+<ToolLayout title="Time Zone Planner">
+  <section class="planner-grid">
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Zone comparison</h2>
+          <p class="ui-card__description">Each card shows shifted time and overlap quality in your work window.</p>
+        </div>
+      </div>
+
+      <div id="planner-results" class="results-grid" aria-live="polite"></div>
+    </Card>
+
+    <Card interactive={false}>
+      <div class="ui-card__header">
+        <div>
+          <h2 class="ui-card__title">Plan across regions</h2>
+          <p class="ui-card__description">Compare one base time across many timezones and share the exact setup.</p>
+        </div>
+      </div>
+
+      <div class="controls-grid">
+        <Field
+          label="Base timezone"
+          htmlFor="planner-base-timezone"
+          hint="Pick from map markers or type an IANA zone like America/Los_Angeles."
+        >
+          <Input id="planner-base-timezone" autocomplete="off" />
+        </Field>
+
+        <Field label="Date & time" htmlFor="planner-date-time" hint="Interpreted in the selected base timezone.">
+          <Input id="planner-date-time" type="datetime-local" />
+        </Field>
+      </div>
+
+      <section class="map-section" aria-labelledby="planner-map-title">
+        <div class="map-heading">
+          <h3 id="planner-map-title">Interactive timezone map</h3>
+          <p>Powered by Leaflet. Choose a mode, then click city markers.</p>
+        </div>
+
+        <div class="map-mode-row" role="radiogroup" aria-label="Map click mode">
+          <label>
+            <input id="planner-mode-base" type="radio" name="planner-pin-mode" value="base" checked />
+            <span>Set base timezone</span>
+          </label>
+          <label>
+            <input id="planner-mode-compare" type="radio" name="planner-pin-mode" value="compare" />
+            <span>Toggle comparison zones</span>
+          </label>
+        </div>
+
+        <div id="planner-map" class="world-map" role="region" aria-label="World map with timezone markers"></div>
+      </section>
+
+      <div class="sliders-grid">
+        <Field label="Time shift (hours)" htmlFor="planner-shift" hint="Slide to test nearby options without retyping the date.">
+          <div class="slider-line">
+            <input id="planner-shift" type="range" min="-24" max="24" step="1" value="0" />
+            <output id="planner-shift-output" for="planner-shift">+0h</output>
+          </div>
+        </Field>
+
+        <Field label="Workday start" htmlFor="planner-work-start" hint="Used for overlap hints in result cards.">
+          <div class="slider-line">
+            <input id="planner-work-start" type="range" min="0" max="23" step="1" value="9" />
+            <output id="planner-work-start-output" for="planner-work-start">09:00</output>
+          </div>
+        </Field>
+
+        <Field label="Workday end" htmlFor="planner-work-end" hint="Must be later than workday start.">
+          <div class="slider-line">
+            <input id="planner-work-end" type="range" min="1" max="24" step="1" value="18" />
+            <output id="planner-work-end-output" for="planner-work-end">18:00</output>
+          </div>
+        </Field>
+      </div>
+
+      <Field label="Comparison timezones" htmlFor="planner-zones" hint="Auto-filled by map markers; optional comma-separated edits.">
+        <Input id="planner-zones" />
+      </Field>
+
+      <div class="actions">
+        <Button id="planner-now" variant="secondary">Use current time</Button>
+        <Button id="planner-update" variant="primary">Update planner</Button>
+        <Button id="planner-copy-link" variant="ghost">Copy share link</Button>
+      </div>
+
+      <p id="planner-status" class="status" aria-live="polite"></p>
+    </Card>
+
+  </section>
+</ToolLayout>
+
+<style>
+  :global(main.tool-content) {
+    width: min(100%, 104rem) !important;
+    max-width: min(100%, 104rem) !important;
+  }
+
+  .planner-grid {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .controls-grid,
+  .sliders-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls-grid :global(.ui-help),
+  .sliders-grid :global(.ui-help) {
+    min-height: 2.5rem;
+  }
+
+  .sliders-grid :global(.ui-field):first-child {
+    grid-column: 1 / -1;
+  }
+
+  .map-section {
+    margin: var(--space-md) 0;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .map-heading h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .map-heading p {
+    margin: var(--space-xs) 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .map-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+  }
+
+  .map-mode-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--text-secondary);
+  }
+
+  .world-map {
+    min-height: 22rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--bg-inset) 85%, #0a1734);
+  }
+
+  :global(.planner-map-tooltip) {
+    background: color-mix(in srgb, var(--bg-surface) 88%, #08152e);
+    border: 1px solid color-mix(in srgb, var(--border-default) 70%, transparent);
+    color: var(--text-primary);
+    border-radius: 0.45rem;
+    box-shadow: none;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.15rem 0.35rem;
+  }
+
+  :global(.planner-map-tooltip::before) {
+    display: none;
+  }
+
+  .slider-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .slider-line output {
+    min-width: 4.6rem;
+    text-align: right;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+  }
+
+  .actions {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .status {
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+    min-height: 1.25rem;
+  }
+
+  .results-grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .zone-card {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    background: color-mix(in srgb, var(--bg-inset) 86%, transparent);
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .zone-card h3,
+  .zone-time,
+  .zone-date,
+  .zone-offset {
+    margin: 0;
+  }
+
+  .zone-time {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .zone-date,
+  .zone-offset {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .work-tag {
+    width: fit-content;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.76rem;
+    border: 1px solid transparent;
+  }
+
+  .work-tag--good {
+    color: var(--state-success);
+    border-color: color-mix(in srgb, var(--state-success) 45%, transparent);
+    background: color-mix(in srgb, var(--state-success) 10%, transparent);
+  }
+
+  .work-tag--warn {
+    color: var(--state-warning);
+    border-color: color-mix(in srgb, var(--state-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--state-warning) 10%, transparent);
+  }
+
+  .work-tag--bad {
+    color: var(--state-danger);
+    border-color: color-mix(in srgb, var(--state-danger) 45%, transparent);
+    background: color-mix(in srgb, var(--state-danger) 10%, transparent);
+  }
+
+  @media (max-width: 1180px) {
+    .controls-grid,
+    .sliders-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .world-map {
+      min-height: 19rem;
+    }
+  }
+</style>
+
+<script>
+  interface PlannerRow {
+    timeZone: string;
+    time: string;
+    dateLabel: string;
+    offsetLabel: string;
+    hour: number;
+  }
+
+  interface PlannerState {
+    baseTimeZone: string;
+    dateTimeLocal: string;
+    zones: string[];
+    shiftHours: number;
+    workdayStartHour: number;
+    workdayEndHour: number;
+  }
+
+  interface MapPoint {
+    label: string;
+    timeZone: string;
+    lat: number;
+    lng: number;
+  }
+
+  type LeafletModule = typeof import('leaflet');
+  type LeafletMap = import('leaflet').Map;
+  type LeafletCircle = import('leaflet').CircleMarker;
+
+  const MAP_POINTS: MapPoint[] = [
+    { label: 'LA', timeZone: 'America/Los_Angeles', lat: 34.0522, lng: -118.2437 },
+    { label: 'NYC', timeZone: 'America/New_York', lat: 40.7128, lng: -74.006 },
+    { label: 'RIO', timeZone: 'America/Sao_Paulo', lat: -22.9068, lng: -43.1729 },
+    { label: 'LON', timeZone: 'Europe/London', lat: 51.5072, lng: -0.1276 },
+    { label: 'BER', timeZone: 'Europe/Berlin', lat: 52.52, lng: 13.405 },
+    { label: 'DXB', timeZone: 'Asia/Dubai', lat: 25.2048, lng: 55.2708 },
+    { label: 'DEL', timeZone: 'Asia/Kolkata', lat: 28.6139, lng: 77.209 },
+    { label: 'BKK', timeZone: 'Asia/Bangkok', lat: 13.7563, lng: 100.5018 },
+    { label: 'TYO', timeZone: 'Asia/Tokyo', lat: 35.6762, lng: 139.6503 },
+    { label: 'SYD', timeZone: 'Australia/Sydney', lat: -33.8688, lng: 151.2093 }
+  ];
+
+  let logic: typeof import('../../tools/time-zone-planner/logic') | null = null;
+  let leaflet: LeafletModule | null = null;
+  let map: LeafletMap | null = null;
+  let tileLayer: import('leaflet').TileLayer | null = null;
+  const markerByZone = new Map<string, LeafletCircle>();
+
+  const getLogic = async () => {
+    if (!logic) {
+      logic = await import('../../tools/time-zone-planner/logic');
+    }
+
+    return logic;
+  };
+
+  const getLeaflet = async (): Promise<LeafletModule> => {
+    if (!leaflet) {
+      leaflet = await import('leaflet');
+    }
+
+    return leaflet;
+  };
+
+  const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
+  const baseTimeZoneInput = byId<HTMLInputElement>('planner-base-timezone');
+  const dateTimeInput = byId<HTMLInputElement>('planner-date-time');
+  const zonesInput = byId<HTMLInputElement>('planner-zones');
+  const shiftInput = byId<HTMLInputElement>('planner-shift');
+  const shiftOutput = byId<HTMLOutputElement>('planner-shift-output');
+  const workStartInput = byId<HTMLInputElement>('planner-work-start');
+  const workStartOutput = byId<HTMLOutputElement>('planner-work-start-output');
+  const workEndInput = byId<HTMLInputElement>('planner-work-end');
+  const workEndOutput = byId<HTMLOutputElement>('planner-work-end-output');
+  const resultsNode = byId<HTMLElement>('planner-results');
+  const statusNode = byId<HTMLElement>('planner-status');
+  const mapContainer = byId<HTMLElement>('planner-map');
+
+  const getPinMode = (): 'base' | 'compare' => {
+    const mode = (document.querySelector('input[name="planner-pin-mode"]:checked') as HTMLInputElement | null)?.value;
+    return mode === 'compare' ? 'compare' : 'base';
+  };
+
+  const setStatus = (message: string): void => {
+    if (statusNode) statusNode.textContent = message;
+  };
+
+  const getDefaultTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+  const parseZonesInput = (value: string): string[] => value.split(',').map((zone) => zone.trim());
+
+  const formatHourLabel = (hour: number): string => `${String(hour).padStart(2, '0')}:00`;
+
+  const renderSliderLabels = (): void => {
+    if (shiftInput && shiftOutput) {
+      const value = Number.parseInt(shiftInput.value, 10);
+      shiftOutput.value = `${value >= 0 ? '+' : ''}${value}h`;
+    }
+
+    if (workStartInput && workStartOutput) {
+      workStartOutput.value = formatHourLabel(Number.parseInt(workStartInput.value, 10));
+    }
+
+    if (workEndInput && workEndOutput) {
+      const end = Number.parseInt(workEndInput.value, 10);
+      workEndOutput.value = `${formatHourLabel(end % 24)}${end === 24 ? ' (+1d)' : ''}`;
+    }
+  };
+
+  const ensureValidWorkWindow = (): void => {
+    if (!workStartInput || !workEndInput) return;
+
+    const start = Number.parseInt(workStartInput.value, 10);
+    const end = Number.parseInt(workEndInput.value, 10);
+    if (end <= start) {
+      workEndInput.value = String(Math.min(24, start + 1));
+    }
+  };
+
+  const getWorkTag = (
+    hour: number,
+    workdayStartHour: number,
+    workdayEndHour: number
+  ): { label: string; tone: 'good' | 'warn' | 'bad' } => {
+    if (hour >= workdayStartHour && hour < workdayEndHour) return { label: 'Inside work window', tone: 'good' };
+    if (hour >= workdayStartHour - 1 && hour < workdayEndHour + 2) return { label: 'Near work window', tone: 'warn' };
+    return { label: 'Outside work window', tone: 'bad' };
+  };
+
+  const formatRow = (instant: Date, timeZone: string): PlannerRow => {
+    const timeFormatter = new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      weekday: 'short',
+      month: 'short',
+      day: '2-digit'
+    });
+
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZoneName: 'shortOffset'
+    }).formatToParts(instant);
+
+    const hourPart = parts.find((part) => part.type === 'hour')?.value ?? '00';
+    const offsetLabel = parts.find((part) => part.type === 'timeZoneName')?.value ?? '';
+
+    return {
+      timeZone,
+      time: timeFormatter.format(instant),
+      dateLabel: dateFormatter.format(instant),
+      offsetLabel,
+      hour: Number.parseInt(hourPart, 10)
+    };
+  };
+
+  const renderRows = (rows: PlannerRow[], state: PlannerState): void => {
+    if (!resultsNode) return;
+
+    if (rows.length === 0) {
+      resultsNode.innerHTML = '<p class="zone-date">Use the map markers or type zones to compare times.</p>';
+      return;
+    }
+
+    resultsNode.innerHTML = rows
+      .map((row) => {
+        const work = getWorkTag(row.hour, state.workdayStartHour, state.workdayEndHour);
+
+        return `
+          <article class="zone-card">
+            <h3>${row.timeZone}</h3>
+            <p class="zone-time">${row.time}</p>
+            <p class="zone-date">${row.dateLabel}</p>
+            <p class="zone-offset">${row.offsetLabel}</p>
+            <p class="work-tag work-tag--${work.tone}">${work.label}</p>
+          </article>
+        `;
+      })
+      .join('');
+  };
+
+  const readState = async (): Promise<PlannerState | null> => {
+    const plannerLogic = await getLogic();
+    const baseTimeZone = (baseTimeZoneInput?.value ?? '').trim();
+
+    if (!plannerLogic.isValidTimeZone(baseTimeZone)) {
+      setStatus('Choose a valid base timezone (for example: Europe/London).');
+      return null;
+    }
+
+    const dateTimeLocal = dateTimeInput?.value ?? '';
+    if (!dateTimeLocal) {
+      setStatus('Choose a date and time first.');
+      return null;
+    }
+
+    ensureValidWorkWindow();
+    renderSliderLabels();
+
+    return {
+      baseTimeZone,
+      dateTimeLocal,
+      zones: plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')),
+      shiftHours: Number.parseInt(shiftInput?.value ?? '0', 10),
+      workdayStartHour: Number.parseInt(workStartInput?.value ?? '9', 10),
+      workdayEndHour: Number.parseInt(workEndInput?.value ?? '18', 10)
+    };
+  };
+
+  const buildShareUrl = async (state: PlannerState): Promise<string> => {
+    const plannerLogic = await getLogic();
+    const query = plannerLogic.buildShareQuery(state);
+    window.history.replaceState({}, '', `${window.location.pathname}${query}`);
+    return `${window.location.origin}${window.location.pathname}${query}`;
+  };
+
+  const applyMarkerStyles = async (): Promise<void> => {
+    if (markerByZone.size === 0) return;
+
+    const plannerLogic = await getLogic();
+    const base = (baseTimeZoneInput?.value ?? '').trim();
+    const selected = new Set(plannerLogic.normalizeTimeZones(parseZonesInput(zonesInput?.value ?? '')));
+
+    for (const [zone, marker] of markerByZone.entries()) {
+      if (zone === base) {
+        marker.setStyle({ color: '#3182f6', fillColor: '#3182f6', fillOpacity: 0.85, radius: 8 });
+      } else if (selected.has(zone)) {
+        marker.setStyle({ color: '#1dbf73', fillColor: '#1dbf73', fillOpacity: 0.8, radius: 7 });
+      } else {
+        marker.setStyle({ color: '#9ab4d5', fillColor: '#9ab4d5', fillOpacity: 0.65, radius: 6 });
+      }
+    }
+  };
+
+  const handleMapPointClick = async (zone: string): Promise<void> => {
+    if (getPinMode() === 'base') {
+      if (baseTimeZoneInput) {
+        baseTimeZoneInput.value = zone;
+      }
+    } else {
+      const current = parseZonesInput(zonesInput?.value ?? '');
+      const set = new Set(current.filter(Boolean));
+
+      if (set.has(zone)) {
+        set.delete(zone);
+      } else {
+        set.add(zone);
+      }
+
+      if (zonesInput) {
+        zonesInput.value = Array.from(set).join(', ');
+      }
+    }
+
+    await updatePlanner();
+  };
+
+  const ensureMap = async (): Promise<void> => {
+    if (!mapContainer) return;
+
+    const L = await getLeaflet();
+
+    if (!map) {
+      map = L.map(mapContainer, {
+        zoomControl: true,
+        attributionControl: false,
+        worldCopyJump: false,
+        minZoom: 2,
+        maxZoom: 6
+      }).setView([24, 15], 2);
+
+      tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        noWrap: true,
+        minZoom: 2,
+        maxZoom: 6
+      });
+
+      tileLayer.addTo(map);
+
+      for (const point of MAP_POINTS) {
+        const marker = L.circleMarker([point.lat, point.lng], {
+          radius: 6,
+          color: '#9ab4d5',
+          fillColor: '#9ab4d5',
+          fillOpacity: 0.65,
+          weight: 1.5
+        });
+
+        marker.bindTooltip(point.label, {
+          permanent: true,
+          direction: 'top',
+          className: 'planner-map-tooltip',
+          offset: [0, -9],
+          opacity: 0.98
+        });
+
+        marker.on('click', () => {
+          void handleMapPointClick(point.timeZone);
+        });
+
+        marker.addTo(map);
+        markerByZone.set(point.timeZone, marker);
+      }
+    }
+
+    map.invalidateSize();
+    await applyMarkerStyles();
+  };
+
+  const updatePlanner = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const state = await readState();
+
+    if (!state) {
+      await ensureMap();
+      renderRows([], {
+        baseTimeZone: 'UTC',
+        dateTimeLocal: '',
+        zones: [],
+        shiftHours: 0,
+        workdayStartHour: 9,
+        workdayEndHour: 18
+      });
+      return;
+    }
+
+    try {
+      const baseInstant = plannerLogic.dateTimeLocalToInstant(state.dateTimeLocal, state.baseTimeZone);
+      const shiftedInstant = new Date(baseInstant.getTime() + state.shiftHours * 60 * 60 * 1000);
+      const finalZones = plannerLogic.normalizeTimeZones([state.baseTimeZone, ...state.zones]);
+      const rows = finalZones.map((zone) => formatRow(shiftedInstant, zone));
+
+      await buildShareUrl(state);
+      await ensureMap();
+      renderRows(rows, state);
+      setStatus(`Showing ${rows.length} timezone${rows.length === 1 ? '' : 's'} at ${shiftedInstant.toISOString()}.`);
+    } catch (error) {
+      await ensureMap();
+      renderRows([], state);
+      setStatus(error instanceof Error ? error.message : 'Unable to convert time.');
+    }
+  };
+
+  const copyShareLink = async (): Promise<void> => {
+    const state = await readState();
+    if (!state) return;
+
+    try {
+      const shareUrl = await buildShareUrl(state);
+      await navigator.clipboard.writeText(shareUrl);
+      setStatus('Share link copied to clipboard.');
+    } catch {
+      setStatus('Could not copy the share link automatically.');
+    }
+  };
+
+  const populateNow = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const baseTimeZone = (baseTimeZoneInput?.value ?? '').trim() || getDefaultTimeZone();
+
+    if (!plannerLogic.isValidTimeZone(baseTimeZone)) {
+      setStatus('Unable to determine a valid timezone for current time.');
+      return;
+    }
+
+    if (baseTimeZoneInput) baseTimeZoneInput.value = baseTimeZone;
+    if (dateTimeInput) dateTimeInput.value = plannerLogic.instantToDateTimeLocal(new Date(), baseTimeZone);
+    await updatePlanner();
+  };
+
+  const hydrateFromQuery = async (): Promise<void> => {
+    const plannerLogic = await getLogic();
+    const parsed = plannerLogic.parseShareState(new URLSearchParams(window.location.search), getDefaultTimeZone());
+
+    if (baseTimeZoneInput) baseTimeZoneInput.value = parsed.baseTimeZone;
+    if (dateTimeInput) {
+      dateTimeInput.value = parsed.dateTimeLocal || plannerLogic.instantToDateTimeLocal(new Date(), parsed.baseTimeZone);
+    }
+
+    if (zonesInput) zonesInput.value = parsed.zones.join(', ');
+    if (shiftInput) shiftInput.value = String(parsed.shiftHours);
+    if (workStartInput) workStartInput.value = String(parsed.workdayStartHour);
+    if (workEndInput) workEndInput.value = String(parsed.workdayEndHour);
+
+    renderSliderLabels();
+    await ensureMap();
+    await updatePlanner();
+  };
+
+  const attachLiveUpdate = (element: HTMLElement | null): void => {
+    element?.addEventListener('input', () => {
+      renderSliderLabels();
+      void updatePlanner();
+    });
+  };
+
+  document.getElementById('planner-update')?.addEventListener('click', () => void updatePlanner());
+  document.getElementById('planner-now')?.addEventListener('click', () => void populateNow());
+  document.getElementById('planner-copy-link')?.addEventListener('click', () => void copyShareLink());
+
+  attachLiveUpdate(shiftInput);
+  attachLiveUpdate(workStartInput);
+  attachLiveUpdate(workEndInput);
+  attachLiveUpdate(zonesInput);
+
+  document.querySelectorAll('input[name="planner-pin-mode"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      void applyMarkerStyles();
+    });
+  });
+
+  void hydrateFromQuery();
+</script>
