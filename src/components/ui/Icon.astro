@@ -1,0 +1,40 @@
+---
+import type { IconDefinition } from '@boxicons/js';
+import { Terminal } from '@boxicons/js/icons/Terminal';
+import { Search } from '@boxicons/js/icons/Search';
+import { Grid } from '@boxicons/js/icons/Grid';
+import { QrScan } from '@boxicons/js/icons/QrScan';
+import { Crop } from '@boxicons/js/icons/Crop';
+import { ImageSparkle } from '@boxicons/js/icons/ImageSparkle';
+import { Database } from '@boxicons/js/icons/Database';
+import { Lock } from '@boxicons/js/icons/Lock';
+import { Clock } from '@boxicons/js/icons/Clock';
+import { ImageNoBackground } from '@boxicons/js/icons/ImageNoBackground';
+import { Eyedropper } from '@boxicons/js/icons/Eyedropper';
+import { PlusMinus } from '@boxicons/js/icons/PlusMinus';
+import { TableLayout } from '@boxicons/js/icons/TableLayout';
+import { Github } from '@boxicons/js/icons/Github';
+import { ArrowUpRight } from '@boxicons/js/icons/ArrowUpRight';
+import { ArrowRight } from '@boxicons/js/icons/ArrowRight';
+import { Menu } from '@boxicons/js/icons/Menu';
+import { X } from '@boxicons/js/icons/X';
+import { Star } from '@boxicons/js/icons/Star';
+import { Moon } from '@boxicons/js/icons/Moon';
+import { Sun } from '@boxicons/js/icons/Sun';
+import { Bolt } from '@boxicons/js/icons/Bolt';
+interface Props { name: string; class?: string; }
+const { name, class: className = '' } = Astro.props;
+const icons: Record<string, IconDefinition> = {
+  terminal: Terminal, search: Search, grid: Grid, qr: QrScan, crop: Crop,
+  svg: ImageSparkle, data: Database, lock: Lock, clock: Clock,
+  'image-no-background': ImageNoBackground, eyedropper: Eyedropper,
+  'plus-minus': PlusMinus, 'table-layout': TableLayout, github: Github,
+  'arrow-up-right': ArrowUpRight, 'arrow-right': ArrowRight,
+  menu: Menu, x: X, star: Star, moon: Moon, sun: Sun, bolt: Bolt,
+};
+const icon = icons[name] ?? Grid;
+const data = icon.packs[icon.defaultPack];
+---
+<span class={`app-icon ${className}`} aria-hidden="true">
+  {data && <svg xmlns="http://www.w3.org/2000/svg" viewBox={data.viewBox} width="20" height="20" fill="currentColor" focusable="false" set:html={data.content} />}
+</span>

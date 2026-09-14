@@ -8,28 +8,22 @@ import Textarea from '../../components/ui/Textarea.astro';
 ---
 
 <ToolLayout title="Developer Inspectors">
-  <div slot="titleAside" class="title-aside-card">
-    <p class="eyebrow">Best-effort network introspection</p>
-    <p>
-      File + Data URL conversions run locally. Page asset analysis can fetch CORS-friendly pages directly, or you can
-      paste HTML for a guaranteed local breakdown.
-    </p>
-  </div>
+
 
   <section class="inspector-shell">
-    <nav class="inspector-tabs" aria-label="Developer inspector modes">
-      <button type="button" class="inspector-tab is-active" data-dev-tab="dataurl" aria-controls="dev-panel-dataurl" aria-selected="true">
+    <nav class="inspector-tabs" role="tablist" aria-label="Developer inspector modes">
+      <button type="button" class="inspector-tab is-active" data-dev-tab="dataurl" role="tab" id="developer-inspectors-tab-dataurl" tabindex="0" aria-controls="dev-panel-dataurl" aria-selected="true">
         Data URL Studio
       </button>
-      <button type="button" class="inspector-tab" data-dev-tab="mime" aria-controls="dev-panel-mime" aria-selected="false">
+      <button type="button" class="inspector-tab" data-dev-tab="mime" role="tab" id="developer-inspectors-tab-mime" tabindex="-1" aria-controls="dev-panel-mime" aria-selected="false">
         MIME Inspector
       </button>
-      <button type="button" class="inspector-tab" data-dev-tab="assets" aria-controls="dev-panel-assets" aria-selected="false">
+      <button type="button" class="inspector-tab" data-dev-tab="assets" role="tab" id="developer-inspectors-tab-assets" tabindex="-1" aria-controls="dev-panel-assets" aria-selected="false">
         Page Assets
       </button>
     </nav>
 
-    <section id="dev-panel-dataurl" class="dev-panel" data-dev-panel="dataurl">
+    <section id="dev-panel-dataurl" class="dev-panel" data-dev-panel="dataurl" role="tabpanel" aria-labelledby="developer-inspectors-tab-dataurl" tabindex="0">
       <Card interactive={false} class="dev-card">
         <div class="dev-head">
           <div>
@@ -130,7 +124,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       </Card>
     </section>
 
-    <section id="dev-panel-mime" class="dev-panel" data-dev-panel="mime" hidden>
+    <section id="dev-panel-mime" class="dev-panel" data-dev-panel="mime" role="tabpanel" aria-labelledby="developer-inspectors-tab-mime" tabindex="0" hidden>
       <Card interactive={false} class="dev-card">
         <div class="dev-head">
           <div>
@@ -214,7 +208,8 @@ import Textarea from '../../components/ui/Textarea.astro';
       </Card>
     </section>
 
-    <section id="dev-panel-assets" class="dev-panel" data-dev-panel="assets" hidden>
+    <section id="dev-panel-assets" class="dev-panel" data-dev-panel="assets" role="tabpanel" aria-labelledby="developer-inspectors-tab-assets" tabindex="0" hidden>
+      <p class="ui-help network-note">Page URL analysis fetches the address you enter. If a site blocks access, paste its HTML to analyze it locally.</p>
       <Card interactive={false} class="dev-card">
         <div class="dev-head">
           <div>
@@ -333,79 +328,9 @@ import Textarea from '../../components/ui/Textarea.astro';
     max-width: min(100%, 108rem) !important;
   }
 
-  .title-aside-card {
-    border-radius: var(--radius-lg);
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default));
-    background:
-      radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 52%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface) 88%, transparent));
-    padding: var(--space-md);
-    color: var(--text-secondary);
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .eyebrow {
-    margin: 0;
-    color: var(--text-tertiary);
-    font-size: 0.75rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .title-aside-card p:last-child {
-    margin: 0;
-  }
-
   .inspector-shell {
     display: grid;
     gap: var(--space-lg);
-  }
-
-  .inspector-tabs {
-    display: flex;
-    gap: 0.55rem;
-    overflow-x: auto;
-    padding: 0.45rem;
-    border-radius: calc(var(--radius-lg) + 0.2rem);
-    border: 1px solid var(--border-default);
-    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-    position: sticky;
-    top: 5.2rem;
-    z-index: 4;
-    backdrop-filter: blur(8px);
-  }
-
-  .inspector-tab {
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: var(--radius-md);
-    min-height: 2.55rem;
-    padding: 0.55rem 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-  }
-
-  .inspector-tab:hover,
-  .inspector-tab:focus-visible {
-    color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent) 24%, var(--border-default));
-    background: color-mix(in srgb, var(--bg-inset) 74%, transparent);
-  }
-
-  .inspector-tab.is-active {
-    color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-default));
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--accent) 18%, transparent),
-        color-mix(in srgb, var(--bg-inset) 82%, transparent)
-      );
   }
 
   .dev-panel[hidden] {
@@ -1034,6 +959,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       const active = button.dataset.devTab === mode;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-selected', active ? 'true' : 'false');
+      button.tabIndex = active ? 0 : -1;
     });
 
     document.querySelectorAll<HTMLElement>('[data-dev-panel]').forEach((panel) => {

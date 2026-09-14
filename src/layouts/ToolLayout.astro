@@ -1,64 +1,86 @@
 ---
 import AppShell from './AppShell.astro';
-interface Props {
-  title: string;
-}
+import Icon from '../components/ui/Icon.astro';
+import { toolSections } from '../data/tool-directory';
+import { createTranslator, getLocalizedToolSectionTitle, getLocalizedToolText, localizeAppLink, resolveLocaleFromPathname, stripLocalePrefix, type TranslationKey } from '../i18n';
+interface Props { title: string; }
 const { title } = Astro.props;
-const hasTitleAside = Astro.slots.has('titleAside');
+const locale = resolveLocaleFromPathname(Astro.url.pathname);
+const t = createTranslator(locale);
+const path = stripLocalePrefix(Astro.url.pathname);
+const section = toolSections.find(section => section.tools.some(tool => tool.href === path));
+const tool = section?.tools.find(tool => tool.href === path);
+const copy = tool ? getLocalizedToolText(locale, tool.href, tool.name, tool.description) : { name: title, description: '' };
+const taskKeys: Record<string, TranslationKey[]> = {
+  '/tools/data-utils': ['workbench.formatJson', 'workbench.diffJson', 'workbench.convertCsv'],
+  '/tools/crypto': ['workbench.hash', 'workbench.uuid', 'workbench.hmac'],
+  '/tools/encoding-token': ['workbench.base64', 'workbench.url', 'workbench.query', 'workbench.jwt'],
+  '/tools/image-optimizer': ['workbench.compress', 'workbench.exif'],
+};
+const tasks = taskKeys[path] ?? [];
 ---
-
-<AppShell title={title}>
-  <main class="ui-page tool-content">
-    <div class:list={["tool-heading", { 'tool-heading--single': !hasTitleAside }]}>
-      <h1 class="gradient-text">{title}</h1>
-      <div class="tool-heading__aside">
-        <slot name="titleAside" />
-      </div>
+<AppShell title={`${copy.name} — toolbelt.sh`}>
+  <main id="main-content" class="ui-page tool-content" tabindex="-1">
+    <nav class="tool-breadcrumb" aria-label={t('workbench.workspace')}><a href={localizeAppLink('/tools', locale)}>{t('shell.nav.allTools')}</a>{section && <><span>/</span><a href={`${localizeAppLink('/tools', locale)}?category=${section.id}`}>{getLocalizedToolSectionTitle(locale, section.id, section.title)}</a></>}</nav>
+    <div class="tool-heading">
+      <div><div class="tool-title-row" data-section={section?.id}>{tool && <span class="tool-icon"><Icon name={tool.icon} /></span>}<h1>{copy.name}</h1></div><p class="tool-description">{copy.description}</p><p class="tool-privacy"><Icon name="lock" />{t('workbench.localOnly')}</p></div>
+      <div class="tool-heading__aside"><slot name="titleAside" /></div>
     </div>
-    <div class="tool-slot">
-      <slot />
-    </div>
+    {tasks.length > 0 && <div class="workspace-tabs" data-workspace-tabs role="tablist" aria-label={t('workbench.workspaceTasks')} hidden>{tasks.map((key, index) => <button class="workspace-tab" type="button" role="tab" id={`task-tab-${index}`} aria-controls={`task-panel-${index}`} aria-selected={index === 0 ? 'true' : 'false'} tabindex={index === 0 ? 0 : -1}>{t(key)}</button>)}</div>}
+    <div class="tool-slot"><slot /></div>
   </main>
 </AppShell>
+<script>
+  document.querySelectorAll<HTMLElement>('.mode-strip, .inspector-tabs').forEach(tablist => {
+    const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    tablist.addEventListener('keydown', event => {
+      const current = tabs.findIndex(tab => tab === document.activeElement);
+      if (current < 0) return;
+      const next = event.key === 'ArrowRight' ? (current + 1) % tabs.length : event.key === 'ArrowLeft' ? (current + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+      if (next < 0) return;
+      event.preventDefault();
+      tabs[next].focus();
+      tabs[next].click();
+    });
+  });
 
-<style>
-  .tool-content {
-    padding-top: var(--space-3xl);
-    padding-bottom: var(--space-4xl);
-    max-width: min(100%, var(--reading-max-width));
-    margin-inline: auto;
-    overflow-x: clip;
-  }
-
-  .tool-heading {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 34rem);
-    gap: var(--space-lg);
-    align-items: start;
-    margin-bottom: var(--space-lg);
-  }
-
-  .tool-heading--single {
-    grid-template-columns: 1fr;
-  }
-
-  .tool-heading__aside:empty {
-    display: none;
-  }
-
-  .tool-content h1 {
-    font-size: clamp(2rem, 6vw, 3rem);
-    margin: 0;
-  }
-
-  .tool-slot {
-    display: grid;
-    gap: var(--space-lg);
-  }
-
-  @media (max-width: 980px) {
-    .tool-heading {
-      grid-template-columns: 1fr;
+  const tablist = document.querySelector<HTMLElement>('[data-workspace-tabs]');
+  if (tablist) {
+    const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const slot = document.querySelector<HTMLElement>('.tool-slot');
+    const panels = Array.from(slot?.querySelectorAll<HTMLElement>('.tool-grid .ui-card') ?? []);
+    const columns = Array.from(slot?.querySelectorAll<HTMLElement>('.tool-column') ?? []);
+    if (panels.length === tabs.length) {
+      slot?.classList.add('has-task-tabs');
+      tablist.hidden = false;
+      panels.forEach((panel, index) => {
+        panel.id = `task-panel-${index}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', `task-tab-${index}`);
+        panel.tabIndex = 0;
+      });
+      const activate = (index: number): void => {
+        tabs.forEach((tab, i) => { tab.setAttribute('aria-selected', String(i === index)); tab.tabIndex = i === index ? 0 : -1; });
+        panels.forEach((panel, i) => { panel.hidden = i !== index; });
+        columns.forEach(column => { column.hidden = !panels.some(panel => !panel.hidden && column.contains(panel)); });
+      };
+      tabs.forEach((tab, index) => tab.addEventListener('click', () => {
+        activate(index);
+        const url = new URL(window.location.href);
+        url.searchParams.set('task', String(index + 1));
+        window.history.replaceState(null, '', url);
+      }));
+      tablist.addEventListener('keydown', event => {
+        const index = tabs.findIndex(tab => tab === document.activeElement);
+        if (index < 0) return;
+        const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+        if (next < 0) return;
+        event.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      });
+      const initial = Number(new URLSearchParams(window.location.search).get('task')) - 1;
+      activate(Number.isInteger(initial) && initial >= 0 && initial < tabs.length ? initial : 0);
     }
   }
-</style>
+</script>

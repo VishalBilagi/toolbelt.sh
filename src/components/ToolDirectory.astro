@@ -1,204 +1,36 @@
 ---
-import { toolSections, totalToolCount, type ToolIcon } from '../data/tool-directory';
-import {
-  createTranslator,
-  getLocalizedToolSectionTitle,
-  getLocalizedToolText,
-  localizeAppLink,
-  resolveLocaleFromPathname,
-} from '../i18n';
-
-interface Props {
-  sectionId?: string;
-}
-
-const { sectionId } = Astro.props;
+import { toolSections, totalToolCount } from '../data/tool-directory';
+import Icon from './ui/Icon.astro';
+import { createTranslator, getLocalizedToolSectionTitle, getLocalizedToolText, localizeAppLink, resolveLocaleFromPathname } from '../i18n';
+interface Props { sectionId?: string; }
+const { sectionId = 'tools' } = Astro.props;
 const locale = resolveLocaleFromPathname(Astro.url.pathname);
-const translate = createTranslator(locale);
-
-const boxIconByToolIcon: Record<ToolIcon, string> = {
-  qr: 'qr-scan',
-  crop: 'crop',
-  svg: 'image-sparkle',
-  data: 'database',
-  lock: 'lock',
-  clock: 'clock',
-  'image-no-background': 'image-no-background',
-  eyedropper: 'eyedropper',
-  'plus-minus': 'plus-minus',
-  'table-layout': 'table-layout'
-};
+const t = createTranslator(locale);
 ---
-
-<section id={sectionId} class="tools-section" aria-label={translate('toolDirectory.aria')}>
-  <div class="tools-head">
-    <h2>{translate('toolDirectory.heading')}</h2>
-    <p id="tools-count">{translate('toolDirectory.count', { count: totalToolCount })}</p>
+<section id={sectionId} class="tools-section" data-directory data-result-template={t('workbench.results', { count: '{count}' })} aria-label={t('toolDirectory.aria')}>
+  <div class="tools-head"><div><h2>{t('shell.nav.allTools')}<span class="count-badge">{totalToolCount}</span></h2><p>{t('workbench.toolsIntro')}</p></div><span class="tools-head-note"><span class="status-dot"></span>{t('workbench.localOnly')}</span></div>
+  <div class="directory-search"><Icon name="search" /><label class="visually-hidden" for="tool-search">{t('workbench.search')}</label><input id="tool-search" type="search" placeholder={t('workbench.searchHint')} autocomplete="off" /><kbd>/</kbd></div>
+  <div class="directory-toolbar"><div class="category-filters" role="group" aria-label={t('workbench.filter')}>
+    <button type="button" class="category-filter is-active" data-category="all" aria-pressed="true">{t('workbench.all')}<span>{totalToolCount}</span></button>
+    {toolSections.map(section => <button type="button" class="category-filter" data-category={section.id} aria-pressed="false">{getLocalizedToolSectionTitle(locale, section.id, section.title)}</button>)}
+    <button type="button" class="category-filter" data-category="saved" aria-pressed="false"><Icon name="star" />{t('workbench.saved')}</button>
+  </div><span class="results-count" data-results-count aria-live="polite" aria-atomic="true">{t('workbench.results', { count: totalToolCount })}</span></div>
+  <div class="tools-grid">
+    {toolSections.flatMap(section => section.tools.map(tool => {
+      const copy = getLocalizedToolText(locale, tool.href, tool.name, tool.description);
+      return <article class="tool-card" data-tool-card data-tool={tool.href} data-section={section.id} data-search={`${copy.name} ${copy.description} ${tool.name} ${tool.tags.join(' ')}`}>
+        <a href={localizeAppLink(tool.href, locale)} class="tool-card-link" aria-label={t('toolDirectory.openTool', { name: copy.name })}>
+          <span class="tool-icon"><Icon name={tool.icon} /></span>
+          <h3>{copy.name}</h3><p>{copy.description}</p>
+          <div class="tool-card-foot"><span>{getLocalizedToolSectionTitle(locale, section.id, section.title)}</span><Icon name="arrow-up-right" /></div>
+        </a>
+        <button type="button" class="favorite-button" data-favorite={tool.href} aria-pressed="false" aria-label={t('workbench.favorite', { name: copy.name })} title={t('workbench.favorite', { name: copy.name })}><Icon name="star" /></button>
+      </article>;
+    }))}
   </div>
-
-  {toolSections.map((section) => (
-    <section class="tool-category">
-      <h3 class="category-title">{getLocalizedToolSectionTitle(locale, section.id, section.title)}</h3>
-
-      <div class="tools-grid" id={section.id}>
-        {section.tools.map((tool) => {
-          const localizedTool = getLocalizedToolText(locale, tool.href, tool.name, tool.description);
-
-          return (
-            <a
-              href={localizeAppLink(tool.href, locale)}
-              class="tool-card"
-              aria-label={translate('toolDirectory.openTool', { name: localizedTool.name })}
-            >
-              <div class="tool-card-head">
-                <span class="tool-icon" aria-hidden="true">
-                  <i data-bx={boxIconByToolIcon[tool.icon]} data-bx-size="sm" aria-hidden="true"></i>
-                </span>
-                <h4>{localizedTool.name}</h4>
-              </div>
-              <p>{localizedTool.description}</p>
-              {/* <span class="load-badge">Loads in &lt; 10kb</span> */}
-            </a>
-          );
-        })}
-      </div>
-    </section>
-  ))}
+  <div class="directory-empty" data-directory-empty hidden><Icon name="search" /><h3 data-empty-title data-default={t('workbench.noResults')} data-saved={t('workbench.noSaved')}>{t('workbench.noResults')}</h3><p data-empty-body data-default={t('workbench.noResultsBody')} data-saved={t('workbench.noSavedBody')}>{t('workbench.noResultsBody')}</p><button class="ui-button ui-button--secondary" type="button" data-reset-filters>{t('workbench.clear')}</button></div>
 </section>
-
-<style>
-  .tools-section {
-    display: grid;
-    gap: var(--space-md);
-    padding-top: 0.35rem;
-  }
-
-  .tools-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-sm);
-  }
-
-  .tools-head h2 {
-    font-size: clamp(1.5rem, 2.4vw, 2.1rem);
-  }
-
-  .tools-head p {
-    color: var(--text-tertiary);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .tool-category {
-    display: grid;
-    gap: 0.82rem;
-  }
-
-  .category-title {
-    font-size: 1.2rem;
-    letter-spacing: -0.02em;
-  }
-
-  .tools-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-md);
-  }
-
-  .tool-card {
-    position: relative;
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
-    padding: 1rem;
-    display: grid;
-    gap: 0.55rem;
-    color: inherit;
-    transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-    overflow: hidden;
-  }
-
-  .tool-card:hover,
-  .tool-card:focus-visible {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--accent) 42%, var(--border-default));
-    box-shadow: var(--shadow-md);
-  }
-
-  .tool-card-head {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    min-width: 0;
-    padding-right: 6.5rem;
-  }
-
-  .tool-icon {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.6rem;
-    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-default));
-    color: var(--accent);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    flex-shrink: 0;
-  }
-
-  :global(.tool-icon svg) {
-    width: 1.05rem;
-    height: 1.05rem;
-  }
-
-  .tool-card h4 {
-    font-size: 1.05rem;
-    line-height: 1.2;
-  }
-
-  .tool-card p {
-    font-size: 0.92rem;
-    line-height: 1.42;
-  }
-
-  .tool-cta {
-    margin-top: auto;
-    color: var(--accent);
-    font-size: 0.84rem;
-    font-weight: 600;
-  }
-
-  .load-badge {
-    position: absolute;
-    top: 0.72rem;
-    right: 0.72rem;
-    font-family: var(--font-mono);
-    font-size: 0.67rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-default));
-    border-radius: var(--radius-full);
-    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
-    color: var(--accent);
-    padding: 0.22rem 0.48rem;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity var(--transition-fast), transform var(--transition-fast);
-    pointer-events: none;
-  }
-
-  .tool-card:hover .load-badge,
-  .tool-card:focus-visible .load-badge {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  @media (max-width: 1080px) {
-    .tools-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+<script>
+  import { initDirectory } from '../lib/workbench';
+  initDirectory();
+</script>

@@ -58,6 +58,12 @@ import Input from '../../components/ui/Input.astro';
   .qr-page {
     display: grid;
     gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  @media (max-width: 1100px) {
+    .qr-page { grid-template-columns: minmax(0, 1fr); }
   }
 
   .actions {
