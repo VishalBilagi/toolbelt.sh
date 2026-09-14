@@ -2,29 +2,11 @@
 import AppShell from '../../layouts/AppShell.astro';
 import ToolDirectory from '../../components/ToolDirectory.astro';
 import { createTranslator, resolveLocaleFromPathname } from '../../i18n';
-
-const locale = resolveLocaleFromPathname(Astro.url.pathname);
-const translate = createTranslator(locale);
+const t = createTranslator(resolveLocaleFromPathname(Astro.url.pathname));
 ---
-
-<AppShell title={translate('pages.toolsIndex.title')}>
-  <main class="ui-page tools-page">
-    <div class="tools-actions ui-cluster">
-    </div>
-
-    <ToolDirectory />
+<AppShell title={t('pages.toolsIndex.title')}>
+  <main id="main-content" class="ui-page directory-page" tabindex="-1">
+    <div class="directory-intro"><p class="eyebrow">{t('workbench.collection')}</p><h1>{t('shell.nav.allTools')}</h1><p>{t('workbench.toolsIntro')}</p></div>
+    <ToolDirectory sectionId="tools" />
   </main>
 </AppShell>
-
-<style>
-  .tools-page {
-    padding-top: var(--space-3xl);
-    padding-bottom: var(--space-4xl);
-    display: grid;
-    gap: var(--space-xl);
-  }
-
-  .tools-actions {
-    justify-content: flex-start;
-  }
-</style>

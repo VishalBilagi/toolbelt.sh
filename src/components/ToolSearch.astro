@@ -1,0 +1,19 @@
+---
+import Icon from './ui/Icon.astro';
+import { toolSections } from '../data/tool-directory';
+import { createTranslator, getLocalizedToolText, localizeAppLink, resolveLocaleFromPathname } from '../i18n';
+const locale = resolveLocaleFromPathname(Astro.url.pathname);
+const t = createTranslator(locale);
+---
+<dialog class="search-dialog" id="tool-search-dialog" aria-labelledby="search-dialog-title">
+  <h2 class="visually-hidden" id="search-dialog-title">{t('workbench.searchTitle')}</h2>
+  <div class="search-dialog-input"><Icon name="search" /><label class="visually-hidden" for="global-tool-search">{t('workbench.search')}</label><input id="global-tool-search" type="search" placeholder={t('workbench.searchHint')} autocomplete="off" /><button type="button" class="icon-button" data-search-close aria-label={t('workbench.close')}><Icon name="x" /></button></div>
+  <div class="search-results">
+    {toolSections.flatMap(section => section.tools.map(tool => {
+      const copy = getLocalizedToolText(locale, tool.href, tool.name, tool.description);
+      return <a href={localizeAppLink(tool.href, locale)} class="search-result" data-search-result data-search={`${copy.name} ${copy.description} ${tool.name} ${tool.tags.join(' ')}`}><span class="tool-icon" data-section={section.id}><Icon name={tool.icon} /></span><span><strong>{copy.name}</strong><small>{copy.description}</small></span><Icon name="arrow-up-right" /></a>;
+    }))}
+    <p class="search-no-results" data-search-empty hidden role="status">{t('workbench.noResults')}</p>
+  </div>
+  <p class="search-dialog-footer">{t('workbench.searchFooter')}</p>
+</dialog>

@@ -8,28 +8,22 @@ import Textarea from '../../components/ui/Textarea.astro';
 ---
 
 <ToolLayout title="Text Tools">
-  <div slot="titleAside" class="title-aside-card">
-    <p class="eyebrow">Local-first workspace</p>
-    <p>
-      Diff, preview Markdown, and test regex patterns in one place. Inputs stay in your browser and never leave
-      the page.
-    </p>
-  </div>
+
 
   <section class="text-shell">
-    <nav class="mode-strip" aria-label="Text tool modes">
-      <button type="button" class="mode-pill is-active" data-text-mode-tab="diff" aria-controls="text-mode-diff" aria-selected="true">
+    <nav class="mode-strip" role="tablist" aria-label="Text tool modes">
+      <button type="button" class="mode-pill is-active" data-text-mode-tab="diff" role="tab" id="text-tools-tab-diff" tabindex="0" aria-controls="text-mode-diff" aria-selected="true">
         Diff / Patch
       </button>
-      <button type="button" class="mode-pill" data-text-mode-tab="markdown" aria-controls="text-mode-markdown" aria-selected="false">
+      <button type="button" class="mode-pill" data-text-mode-tab="markdown" role="tab" id="text-tools-tab-markdown" tabindex="-1" aria-controls="text-mode-markdown" aria-selected="false">
         Markdown Preview
       </button>
-      <button type="button" class="mode-pill" data-text-mode-tab="regex" aria-controls="text-mode-regex" aria-selected="false">
+      <button type="button" class="mode-pill" data-text-mode-tab="regex" role="tab" id="text-tools-tab-regex" tabindex="-1" aria-controls="text-mode-regex" aria-selected="false">
         Regex Tester
       </button>
     </nav>
 
-    <section id="text-mode-diff" class="workspace-panel" data-text-mode-panel="diff">
+    <section id="text-mode-diff" class="workspace-panel" data-text-mode-panel="diff" role="tabpanel" aria-labelledby="text-tools-tab-diff" tabindex="0">
       <Card interactive={false} class="workspace-card">
         <div class="workspace-head">
           <div>
@@ -118,7 +112,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       </Card>
     </section>
 
-    <section id="text-mode-markdown" class="workspace-panel" data-text-mode-panel="markdown" hidden>
+    <section id="text-mode-markdown" class="workspace-panel" data-text-mode-panel="markdown" role="tabpanel" aria-labelledby="text-tools-tab-markdown" tabindex="0" hidden>
       <Card interactive={false} class="workspace-card">
         <div class="workspace-head">
           <div>
@@ -194,7 +188,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       </Card>
     </section>
 
-    <section id="text-mode-regex" class="workspace-panel" data-text-mode-panel="regex" hidden>
+    <section id="text-mode-regex" class="workspace-panel" data-text-mode-panel="regex" role="tabpanel" aria-labelledby="text-tools-tab-regex" tabindex="0" hidden>
       <Card interactive={false} class="workspace-card">
         <div class="workspace-head">
           <div>
@@ -289,80 +283,9 @@ import Textarea from '../../components/ui/Textarea.astro';
     max-width: min(100%, 108rem) !important;
   }
 
-  .title-aside-card {
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default));
-    border-radius: var(--radius-lg);
-    background:
-      radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0, transparent 55%),
-      color-mix(in srgb, var(--bg-surface) 92%, transparent);
-    padding: var(--space-md);
-    display: grid;
-    gap: 0.35rem;
-    color: var(--text-secondary);
-  }
-
-  .eyebrow {
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
-    font-family: var(--font-mono);
-  }
-
-  .title-aside-card p:last-child {
-    margin: 0;
-  }
-
   .text-shell {
     display: grid;
     gap: var(--space-lg);
-  }
-
-  .mode-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.55rem;
-    padding: 0.45rem;
-    border: 1px solid var(--border-default);
-    border-radius: calc(var(--radius-lg) + 0.25rem);
-    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-    position: sticky;
-    top: 5.2rem;
-    z-index: 4;
-    backdrop-filter: blur(8px);
-  }
-
-  .mode-pill {
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    min-height: 2.6rem;
-    padding: 0.55rem 0.9rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-  }
-
-  .mode-pill:hover,
-  .mode-pill:focus-visible {
-    color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent) 28%, var(--border-default));
-    background: color-mix(in srgb, var(--bg-inset) 78%, transparent);
-  }
-
-  .mode-pill.is-active {
-    color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent) 42%, var(--border-default));
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--accent) 16%, transparent),
-        color-mix(in srgb, var(--bg-inset) 84%, transparent)
-      );
-    box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
   }
 
   .workspace-panel[hidden] {
@@ -991,6 +914,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       const active = tab.dataset.textModeTab === mode;
       tab.classList.toggle('is-active', active);
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.tabIndex = active ? 0 : -1;
     });
 
     panels.forEach((panel) => {
