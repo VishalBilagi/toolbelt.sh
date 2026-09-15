@@ -7,6 +7,22 @@ export interface DiffLine {
   rightLineNumber: number | null;
 }
 
+export interface DiffSegment {
+  text: string;
+  changed: boolean;
+}
+
+export interface VisualDiffSide {
+  lineNumber: number;
+  segments: DiffSegment[];
+}
+
+export interface VisualDiffRow {
+  type: 'context' | 'modified' | 'added' | 'removed';
+  left: VisualDiffSide | null;
+  right: VisualDiffSide | null;
+}
+
 export interface DiffStats {
   leftLineCount: number;
   rightLineCount: number;
@@ -126,14 +142,14 @@ const diffWithPrefixSuffixFallback = (leftLines: string[], rightLines: string[])
   return ops;
 };
 
-const diffLines = (leftLines: string[], rightLines: string[]): DiffOp[] => {
+const diffLines = (leftLines: string[], rightLines: string[], matrixLimit = LARGE_DIFF_MATRIX_LIMIT): DiffOp[] => {
   const rows = leftLines.length;
   const cols = rightLines.length;
 
   if (rows === 0) return rightLines.map((text) => ({ type: 'add', text }));
   if (cols === 0) return leftLines.map((text) => ({ type: 'remove', text }));
 
-  if (rows * cols > LARGE_DIFF_MATRIX_LIMIT) {
+  if (rows * cols > matrixLimit) {
     return diffWithPrefixSuffixFallback(leftLines, rightLines);
   }
 
@@ -278,6 +294,61 @@ export const diffText = (left: string, right: string, options: UnifiedPatchOptio
   };
 };
 
+/** Pair changed lines in each block while retaining empty cells for one-sided edits. */
+export const buildVisualDiffRows = (lines: readonly DiffLine[]): VisualDiffRow[] => {
+  const rows: VisualDiffRow[] = [];
+  // Bound the total extra matching work, including documents with many changed lines.
+  let wordMatchingBudget = 200_000;
+  const side = (line: DiffLine, position: 'left' | 'right', changed: boolean): VisualDiffSide => ({
+    lineNumber: (position === 'left' ? line.leftLineNumber : line.rightLineNumber) ?? 0,
+    segments: [{ text: line.text, changed }]
+  });
+  const append = (segments: DiffSegment[], text: string, changed: boolean): void => {
+    const previous = segments.at(-1);
+    if (previous?.changed === changed) previous.text += text;
+    else segments.push({ text, changed });
+  };
+
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index];
+    if (line.type === 'context') {
+      rows.push({ type: 'context', left: side(line, 'left', false), right: side(line, 'right', false) });
+      index++;
+      continue;
+    }
+    const removed: DiffLine[] = [];
+    const added: DiffLine[] = [];
+    while (index < lines.length && lines[index].type !== 'context') {
+      const changed = lines[index++];
+      (changed.type === 'removed' ? removed : added).push(changed);
+    }
+    for (let offset = 0; offset < Math.max(removed.length, added.length); offset++) {
+      const leftLine = removed[offset];
+      const rightLine = added[offset];
+      const left = leftLine ? side(leftLine, 'left', true) : null;
+      const right = rightLine ? side(rightLine, 'right', true) : null;
+      if (left && right) {
+        const tokenize = (text: string): string[] => text.match(/[\p{L}\p{N}_]+|[^\p{L}\p{N}_]/gu) ?? [];
+        const leftWords = tokenize(leftLine.text);
+        const rightWords = tokenize(rightLine.text);
+        const cost = leftWords.length * rightWords.length;
+        const limit = Math.min(40_000, wordMatchingBudget);
+        const changes = diffLines(leftWords, rightWords, limit);
+        if (cost <= limit) wordMatchingBudget -= cost;
+        left.segments = [];
+        right.segments = [];
+        for (const change of changes) {
+          if (change.type !== 'add') append(left.segments, change.text, change.type === 'remove');
+          if (change.type !== 'remove') append(right.segments, change.text, change.type === 'add');
+        }
+      }
+      rows.push({ type: left && right ? 'modified' : left ? 'removed' : 'added', left, right });
+    }
+  }
+  return rows;
+};
+
 const escapeHtml = (value: string): string =>
   value
     .replace(/&/g, '&amp;')
@@ -285,6 +356,21 @@ const escapeHtml = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+
+export const renderVisualDiff = (rows: readonly VisualDiffRow[]): string => {
+  const renderSide = (side: VisualDiffSide | null, position: 'left' | 'right', changed: boolean): string => {
+    if (!side) return '<div class="diff-cell diff-cell--empty" role="cell"><span class="visually-hidden">No corresponding line</span></div>';
+    const type = changed ? position === 'left' ? 'removed' : 'added' : 'context';
+    const label = type === 'removed' ? 'Removed' : type === 'added' ? 'Added' : 'Unchanged';
+    const tag = position === 'left' ? 'del' : 'ins';
+    const content = side.segments.map(segment => {
+      const text = escapeHtml(segment.text);
+      return segment.changed ? `<${tag}>${text}</${tag}>` : text;
+    }).join('');
+    return `<div class="diff-cell diff-cell--${type}" role="cell"><span class="diff-cell__number" aria-hidden="true">${side.lineNumber}</span><span class="visually-hidden">${label}, line ${side.lineNumber}: </span><code class="diff-cell__text">${content || '<span class="diff-blank">Empty line</span>'}</code></div>`;
+  };
+  return rows.map(row => `<div class="diff-row" role="row">${renderSide(row.left, 'left', row.type !== 'context')}${renderSide(row.right, 'right', row.type !== 'context')}</div>`).join('');
+};
 
 const slugify = (value: string): string =>
   value
@@ -583,4 +669,3 @@ export const buildRegexHighlightSegments = (input: string, matches: RegexMatch[]
   if (!segments.length) return [{ type: 'plain', text: input }];
   return segments;
 };
-
