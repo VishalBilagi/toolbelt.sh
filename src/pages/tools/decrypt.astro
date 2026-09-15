@@ -1,0 +1,8 @@
+---
+import SecretLayout from '../../layouts/SecretLayout.astro';
+import SecretLink from '../../components/SecretLink.astro';
+import { resolveLocaleFromPathname } from '../../i18n';
+import { secretMessages } from '../../tools/secret-link/messages';
+const copy = secretMessages[resolveLocaleFromPathname(Astro.url.pathname)];
+---
+<SecretLayout title={copy.unlockTab}><SecretLink mode="decrypt" /></SecretLayout>

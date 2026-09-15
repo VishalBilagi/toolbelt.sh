@@ -1,6 +1,8 @@
 import type { TranslationKey } from '../index';
 
 const es: Partial<Record<TranslationKey, string>> = {
+  'tools.secret-link.name': 'Enlace secreto',
+  'tools.secret-link.description': 'Cifra un mensaje corto y comparte un enlace protegido por una frase de contraseña.',
   'workbench.skip': "Saltar al contenido",
   'workbench.tagline': "Menos tareas repetitivas.",
   'workbench.search': "Buscar herramienta…",

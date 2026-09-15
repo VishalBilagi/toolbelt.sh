@@ -1,4 +1,6 @@
 const en = {
+  'tools.secret-link.name': 'Secret Link',
+  'tools.secret-link.description': 'Encrypt a short message and share a link protected by a passphrase.',
   'workbench.skip': "Skip to content",
   'workbench.tagline': "A little less busywork.",
   'workbench.search': "Find a tool…",
