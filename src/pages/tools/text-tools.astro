@@ -29,12 +29,13 @@ import Textarea from '../../components/ui/Textarea.astro';
           <div>
             <h2 class="ui-card__title">Diff & Patch Studio</h2>
             <p class="ui-card__description">
-              Compare text line-by-line, inspect a visual diff stream, and copy a unified patch-style output.
+              Compare originals side by side, see changed words in context, and expand the patch when you need it.
             </p>
           </div>
           <div class="workspace-actions">
             <Button id="diff-load-sample" variant="ghost">Load sample</Button>
             <Button id="diff-swap" variant="secondary">Swap sides</Button>
+            <Button id="diff-clear" variant="ghost">Clear</Button>
             <Button id="diff-run" variant="primary">Compare</Button>
           </div>
         </div>
@@ -60,54 +61,38 @@ import Textarea from '../../components/ui/Textarea.astro';
             </Field>
           </section>
 
-          <aside class="pane-card pane-card--stats diff-stats">
+          <section class="diff-stats" aria-label="Change summary">
             <div class="pane-card__head">
-              <h3>Change Summary</h3>
-              <span id="diff-status" class="pane-card__meta" aria-live="polite">Ready</span>
+              <h3>Change summary</h3>
+              <span id="diff-status" class="pane-card__meta" role="status">Ready</span>
             </div>
-
             <div class="metric-grid">
-              <div class="metric-tile">
-                <span>Additions</span>
-                <strong id="diff-stat-added">0</strong>
-              </div>
-              <div class="metric-tile">
-                <span>Removals</span>
-                <strong id="diff-stat-removed">0</strong>
-              </div>
-              <div class="metric-tile">
-                <span>Change blocks</span>
-                <strong id="diff-stat-blocks">0</strong>
-              </div>
-              <div class="metric-tile">
-                <span>Total lines</span>
-                <strong id="diff-stat-lines">0 → 0</strong>
-              </div>
-            </div>
-
-            <div class="stack-actions">
-              <Button id="diff-copy-patch" variant="ghost">Copy patch</Button>
-              <Button id="diff-clear" variant="ghost">Clear</Button>
-            </div>
-          </aside>
-
-          <section class="pane-card pane-card--output diff-patch">
-            <div class="pane-card__head">
-              <h3>Patch Output</h3>
-              <span class="pane-card__meta">Unified patch style</span>
-            </div>
-            <pre id="diff-patch-output" class="code-output" aria-live="polite">Patch output will appear here.</pre>
-          </section>
-
-          <section class="pane-card pane-card--output diff-visual">
-            <div class="pane-card__head">
-              <h3>Visual Diff Stream</h3>
-              <span class="pane-card__meta">Line-level additions and removals</span>
-            </div>
-            <div id="diff-line-output" class="diff-line-list" aria-live="polite">
-              <p class="empty-note">Run a compare to inspect line-by-line changes.</p>
+              <div class="metric-tile"><strong id="diff-stat-added">0</strong><span>lines added</span></div>
+              <div class="metric-tile"><strong id="diff-stat-removed">0</strong><span>lines removed</span></div>
+              <div class="metric-tile"><strong id="diff-stat-blocks">0</strong><span>change blocks</span></div>
+              <div class="metric-tile"><strong id="diff-stat-lines">0 → 0</strong><span>total lines</span></div>
             </div>
           </section>
+
+          <section class="pane-card pane-card--output diff-visual" aria-labelledby="diff-visual-title">
+            <div class="pane-card__head diff-visual-heading">
+              <h3 id="diff-visual-title">Visual comparison</h3>
+              <div class="diff-legend"><span class="diff-legend--removed">Removed</span><span class="diff-legend--added">Added</span><span>Changed words are highlighted</span></div>
+            </div>
+            <p id="diff-empty" class="empty-note">Paste two versions above, then choose Compare or press Ctrl/⌘ + Enter.</p>
+            <div id="diff-view" class="diff-scroll" role="region" aria-label="Scrollable side-by-side comparison" tabindex="0" hidden>
+              <div class="diff-table" role="table" aria-label="Original and updated text">
+                <div class="diff-table-head" role="row"><span role="columnheader">Original</span><span role="columnheader">Updated</span></div>
+                <div id="diff-line-output" class="diff-line-list" role="rowgroup"></div>
+              </div>
+            </div>
+          </section>
+
+          <details id="diff-patch" class="pane-card diff-patch">
+            <summary>Patch output <span class="pane-card__meta">Expand to view or copy</span></summary>
+            <div class="patch-actions"><Button id="diff-copy-patch" variant="ghost" disabled>Copy patch</Button></div>
+            <pre id="diff-patch-output" class="code-output">Patch output will appear here.</pre>
+          </details>
         </div>
       </Card>
     </section>
@@ -365,11 +350,12 @@ import Textarea from '../../components/ui/Textarea.astro';
   .diff-stage {
     display: grid;
     gap: var(--space-md);
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(16rem, 0.9fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
-      'left right stats'
-      'patch patch stats'
-      'visual visual visual';
+      'left right'
+      'stats stats'
+      'visual visual'
+      'patch patch';
     align-items: start;
   }
 
@@ -383,9 +369,26 @@ import Textarea from '../../components/ui/Textarea.astro';
 
   .diff-stats {
     grid-area: stats;
-    position: sticky;
-    top: 9rem;
+    padding: var(--space-sm) var(--space-xs);
   }
+
+  .diff-stats .metric-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md) var(--space-xl);
+  }
+
+  .diff-stats .metric-tile {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  #diff-stat-added { color: var(--state-success); }
+  #diff-stat-removed { color: var(--state-danger); }
 
   .diff-patch {
     grid-area: patch;
@@ -446,60 +449,31 @@ import Textarea from '../../components/ui/Textarea.astro';
     line-height: 1.45;
   }
 
-  .diff-line-list {
-    border: 1px solid color-mix(in srgb, var(--border-default) 90%, transparent);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--bg-inset) 86%, transparent);
-    overflow: hidden;
-    max-height: 26rem;
-    overflow-y: auto;
-  }
-
-  .diff-row {
-    display: grid;
-    grid-template-columns: 2.6rem 4.4rem 4.4rem minmax(0, 1fr);
-    gap: 0.45rem;
-    align-items: start;
-    padding: 0.42rem 0.6rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--border-default) 92%, transparent);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    line-height: 1.45;
-  }
-
-  .diff-row:last-child {
-    border-bottom: none;
-  }
-
-  .diff-row--added {
-    background: color-mix(in srgb, var(--state-success) 11%, transparent);
-  }
-
-  .diff-row--removed {
-    background: color-mix(in srgb, var(--state-danger) 11%, transparent);
-  }
-
-  .diff-row__prefix {
-    color: var(--text-tertiary);
-    font-weight: 700;
-  }
-
-  .diff-row--added .diff-row__prefix {
-    color: var(--state-success);
-  }
-
-  .diff-row--removed .diff-row__prefix {
-    color: var(--state-danger);
-  }
-
-  .diff-row__num {
-    color: var(--text-tertiary);
-  }
-
-  .diff-row__text {
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  .diff-visual-heading { flex-wrap: wrap; gap: var(--space-md); }
+  .diff-legend { display: flex; flex-wrap: wrap; gap: var(--space-md); font-size: 0.72rem; color: var(--text-secondary); }
+  .diff-legend--removed { color: var(--state-danger); text-decoration: line-through; }
+  .diff-legend--added { color: var(--state-success); text-decoration: underline; }
+  .diff-scroll { max-height: 34rem; overflow: auto; border: 1px solid var(--border-default); border-radius: var(--radius-sm); }
+  .diff-table { min-width: 36rem; }
+  .diff-table-head { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); position: sticky; top: 0; z-index: 1; background: var(--bg-surface); border-bottom: 1px solid var(--border-default); }
+  .diff-table-head > span { padding: 0.65rem 0.85rem; font-size: 0.8rem; font-weight: 600; }
+  .diff-table-head > span + span { border-left: 1px solid var(--border-default); }
+  /* Rows are inserted at runtime: scope to the static container, not generated nodes. */
+  .diff-line-list :global(.diff-row) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .diff-line-list :global(.diff-cell) { display: grid; grid-template-columns: 3rem minmax(0, 1fr); min-width: 0; min-height: 2rem; border-bottom: 1px solid var(--border-muted); font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.7; }
+  .diff-line-list :global(.diff-cell + .diff-cell) { border-left: 1px solid var(--border-default); }
+  .diff-line-list :global(.diff-cell--removed) { background: var(--color-danger-soft); }
+  .diff-line-list :global(.diff-cell--added) { background: var(--color-success-soft); }
+  .diff-line-list :global(.diff-cell--empty) { background: var(--color-surface-2); }
+  .diff-line-list :global(.diff-cell__number) { color: var(--text-tertiary); text-align: right; padding: 0.3rem 0.65rem; user-select: none; border-right: 1px solid var(--border-muted); }
+  .diff-line-list :global(.diff-cell__text) { padding: 0.3rem 0.65rem; color: var(--text-primary); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+  .diff-line-list :global(del), .diff-line-list :global(ins) { border-radius: 2px; color: var(--text-primary); }
+  .diff-line-list :global(del) { background: color-mix(in srgb, var(--state-danger) 28%, transparent); text-decoration: line-through; text-decoration-color: var(--state-danger); }
+  .diff-line-list :global(ins) { background: color-mix(in srgb, var(--state-success) 28%, transparent); text-decoration: underline; text-decoration-color: var(--state-success); text-underline-offset: 3px; }
+  .diff-line-list :global(.diff-blank) { font-family: var(--font-sans); font-size: 0.7rem; font-style: italic; color: var(--text-tertiary); }
+  .diff-patch summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+  .diff-patch summary .pane-card__meta { margin-left: var(--space-md); font-size: 0.65rem; font-weight: 400; }
+  .patch-actions { display: flex; justify-content: flex-end; margin-block: var(--space-sm); }
 
   .markdown-stage {
     display: grid;
@@ -820,18 +794,12 @@ import Textarea from '../../components/ui/Textarea.astro';
   }
 
   @media (max-width: 1280px) {
-    .diff-stage,
     .markdown-stage,
     .regex-stage {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       grid-template-areas: none;
     }
 
-    .pane-card--left,
-    .pane-card--right,
-    .diff-stats,
-    .diff-patch,
-    .diff-visual,
     .md-editor,
     .md-preview-card,
     .md-metrics,
@@ -870,10 +838,7 @@ import Textarea from '../../components/ui/Textarea.astro';
       grid-template-columns: 1fr;
     }
 
-    .diff-row {
-      grid-template-columns: 2rem 3.2rem 3.2rem minmax(0, 1fr);
-      font-size: 0.78rem;
-    }
+    .diff-stage { grid-template-areas: 'left' 'right' 'stats' 'visual' 'patch'; }
 
     .regex-fields {
       grid-template-columns: 1fr;
@@ -938,6 +903,11 @@ import Textarea from '../../components/ui/Textarea.astro';
   const diffRightInput = byId<HTMLTextAreaElement>('diff-right-input');
   const diffPatchOutput = byId<HTMLElement>('diff-patch-output');
   const diffLineOutput = byId<HTMLElement>('diff-line-output');
+  const diffView = byId<HTMLElement>('diff-view');
+  const diffEmpty = byId<HTMLElement>('diff-empty');
+  const diffCopyPatch = byId<HTMLButtonElement>('diff-copy-patch');
+  let diffPatchText = '';
+  let diffRevision = 0;
   const diffStatus = byId<HTMLElement>('diff-status');
   const diffStatAdded = byId<HTMLElement>('diff-stat-added');
   const diffStatRemoved = byId<HTMLElement>('diff-stat-removed');
@@ -947,11 +917,19 @@ import Textarea from '../../components/ui/Textarea.astro';
   const renderDiffLines = async () => {
     if (!diffLeftInput || !diffRightInput || !diffPatchOutput || !diffLineOutput) return;
 
+    const revision = ++diffRevision;
     const left = diffLeftInput.value;
     const right = diffRightInput.value;
-    if (!left.trim() && !right.trim()) {
+    diffPatchText = '';
+    if (diffCopyPatch) diffCopyPatch.disabled = true;
+    if (left === '' && right === '') {
       diffPatchOutput.textContent = 'Patch output will appear here.';
-      diffLineOutput.innerHTML = '<p class="empty-note">Run a compare to inspect line-by-line changes.</p>';
+      diffLineOutput.replaceChildren();
+      if (diffView) diffView.hidden = true;
+      if (diffEmpty) {
+        diffEmpty.hidden = false;
+        diffEmpty.textContent = 'Paste two versions above, then choose Compare or press Ctrl/⌘ + Enter.';
+      }
       if (diffStatus) diffStatus.textContent = 'Add text to compare';
       if (diffStatAdded) diffStatAdded.textContent = '0';
       if (diffStatRemoved) diffStatRemoved.textContent = '0';
@@ -961,10 +939,13 @@ import Textarea from '../../components/ui/Textarea.astro';
     }
 
     try {
-      const { diffText } = await getLogic();
+      const { diffText, buildVisualDiffRows, renderVisualDiff } = await getLogic();
+      if (revision !== diffRevision || left !== diffLeftInput.value || right !== diffRightInput.value) return;
       const result = diffText(left, right, { fromFile: 'a/original.txt', toFile: 'b/updated.txt' });
 
+      diffPatchText = result.patch;
       diffPatchOutput.textContent = result.patch;
+      if (diffCopyPatch) diffCopyPatch.disabled = false;
       if (diffStatAdded) diffStatAdded.textContent = String(result.stats.additions);
       if (diffStatRemoved) diffStatRemoved.textContent = String(result.stats.removals);
       if (diffStatBlocks) diffStatBlocks.textContent = String(result.stats.changedBlocks);
@@ -974,34 +955,18 @@ import Textarea from '../../components/ui/Textarea.astro';
           result.stats.additions + result.stats.removals > 0 ? 'Diff generated' : 'No line changes detected';
       }
 
-      if (!result.lines.length) {
-        diffLineOutput.innerHTML = '<p class="empty-note">Both inputs are empty.</p>';
-        return;
-      }
-
-      const rows = result.lines
-        .map((line) => {
-          const prefix = line.type === 'added' ? '+' : line.type === 'removed' ? '-' : '·';
-          const rowClass =
-            line.type === 'added' ? 'diff-row diff-row--added' : line.type === 'removed' ? 'diff-row diff-row--removed' : 'diff-row';
-          const leftNum = line.leftLineNumber == null ? '' : String(line.leftLineNumber);
-          const rightNum = line.rightLineNumber == null ? '' : String(line.rightLineNumber);
-          return `<div class="${rowClass}">
-            <span class="diff-row__prefix">${prefix}</span>
-            <span class="diff-row__num">${leftNum}</span>
-            <span class="diff-row__num">${rightNum}</span>
-            <span class="diff-row__text">${escapeHtml(line.text)}</span>
-          </div>`;
-        })
-        .join('');
-
-      diffLineOutput.innerHTML = rows;
+      diffLineOutput.innerHTML = renderVisualDiff(buildVisualDiffRows(result.lines));
+      if (diffView) diffView.hidden = false;
+      if (diffEmpty) diffEmpty.hidden = true;
     } catch (error) {
       if (diffStatus) diffStatus.textContent = 'Unable to compare';
       diffPatchOutput.textContent = error instanceof Error ? error.message : 'Unable to generate diff.';
-      diffLineOutput.innerHTML = `<p class="error-note">${escapeHtml(
-        error instanceof Error ? error.message : 'Unable to generate diff.'
-      )}</p>`;
+      diffLineOutput.replaceChildren();
+      if (diffView) diffView.hidden = true;
+      if (diffEmpty) {
+        diffEmpty.hidden = false;
+        diffEmpty.textContent = error instanceof Error ? error.message : 'Unable to generate diff.';
+      }
     }
   };
 
@@ -1020,6 +985,8 @@ import Textarea from '../../components/ui/Textarea.astro';
   document.getElementById('diff-clear')?.addEventListener('click', () => {
     if (diffLeftInput) diffLeftInput.value = '';
     if (diffRightInput) diffRightInput.value = '';
+    const patch = byId<HTMLDetailsElement>('diff-patch');
+    if (patch) patch.open = false;
     void renderDiffLines();
   });
 
@@ -1035,7 +1002,8 @@ import Textarea from '../../components/ui/Textarea.astro';
 
   document.getElementById('diff-copy-patch')?.addEventListener('click', async () => {
     try {
-      await copyText(diffPatchOutput?.textContent ?? '');
+      if (!diffPatchText) return;
+      await copyText(diffPatchText);
       if (diffStatus) diffStatus.textContent = 'Patch copied';
     } catch {
       if (diffStatus) diffStatus.textContent = 'Clipboard copy failed';
@@ -1043,6 +1011,12 @@ import Textarea from '../../components/ui/Textarea.astro';
   });
 
   [diffLeftInput, diffRightInput].forEach((node) => {
+    node?.addEventListener('input', () => {
+      diffRevision++;
+      diffPatchText = '';
+      if (diffCopyPatch) diffCopyPatch.disabled = true;
+      if (diffStatus) diffStatus.textContent = 'Inputs changed — Compare to update';
+    });
     node?.addEventListener(
       'keydown',
       (event) => {
