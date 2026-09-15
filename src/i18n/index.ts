@@ -173,6 +173,7 @@ const TOOL_SECTION_TITLE_KEY_BY_ID = {
 } as const satisfies Record<string, TranslationKey>;
 
 const TOOL_TEXT_KEYS_BY_HREF = {
+  '/tools/secret-link': { name: 'tools.secret-link.name', description: 'tools.secret-link.description' },
   '/tools/qr': { name: 'tools.qr.name', description: 'tools.qr.description' },
   '/tools/color-picker': { name: 'tools.color-picker.name', description: 'tools.color-picker.description' },
   '/tools/svg-resize': { name: 'tools.svg-resize.name', description: 'tools.svg-resize.description' },

@@ -91,6 +91,13 @@ export const toolSections: ToolSection[] = [
     title: 'Data & Security',
     tools: [
       {
+        name: 'Secret Link',
+        href: '/tools/secret-link',
+        description: 'Encrypt a short message and share a link protected by a passphrase.',
+        tags: ['encrypt', 'decrypt', 'secret', 'share', 'password', 'passphrase', 'private'],
+        icon: 'lock'
+      },
+      {
         name: 'Encoding & Token Tools',
         href: '/tools/encoding-token',
         description: 'Base64, URL/query editing, and JWT claim decoding utilities.',
